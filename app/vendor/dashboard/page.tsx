@@ -2,78 +2,89 @@
 
 import * as React from "react";
 import { Navbar } from "@/components/features/landing/navbar";
-import { Camera, CheckCircle2, Upload } from "lucide-react";
+import { RoomChatModal } from "@/components/features/chat/room-chat-modal";
+import { CheckCircle2, Clock, MessageSquare, Bell, Store, UserCheck } from "lucide-react";
 
 export default function VendorDashboardPage() {
-  const [scannedToken, setScannedToken] = React.useState<string | null>(null);
-  const [photoBefore, setPhotoBefore] = React.useState<string | null>(null);
-  const [photoAfter, setPhotoAfter] = React.useState<string | null>(null);
+  const [activeTab, setActiveTab] = React.useState<"pemilik" | "pemandu">("pemandu");
+  const [isChatOpen, setIsChatOpen] = React.useState(false);
 
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900">
       <Navbar />
       <div className="max-w-5xl mx-auto space-y-8">
-        <div className="border-b border-stone-300 pb-6">
-          <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// PORTAL MITRA VENDOR & GUIDE</span>
-          <h1 className="text-4xl font-extrabold tracking-tight mt-1">Dashboard Fulfillment Operasional</h1>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-5 bg-stone-900 text-white p-6 rounded-xl border border-stone-800 shadow-xl space-y-6 text-center">
-            <h3 className="font-mono text-xs font-bold text-[#c5922e] uppercase tracking-widest">// SIMULASI SCANNER QR TIKET</h3>
-            <div className="w-48 h-48 mx-auto bg-stone-800 rounded-xl border-2 border-dashed border-stone-600 flex flex-col items-center justify-center p-4">
-              <Camera className="w-10 h-10 text-emerald-400 mb-2 animate-pulse" />
-              <span className="text-[10px] font-mono text-stone-400">Arahkan Kamera ke Tiket Wisatawan</span>
-            </div>
-            
-            <button onClick={() => setScannedToken("GAMTARA-7890")} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-mono text-xs uppercase font-bold tracking-wider rounded-xl transition-colors cursor-pointer border border-emerald-800">
-              Simulasi Scan Tiket Wisatawan
-            </button>
-
-            {scannedToken && (
-              <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-400 flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Tiket Valid: {scannedToken}</span>
-              </div>
-            )}
+        <div className="border-b border-stone-300 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+          <div>
+            <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// DASHBOARD OPERASIONAL MITRA</span>
+            <h1 className="text-4xl font-extrabold tracking-tight mt-1">Portal Mitra GAMTARA</h1>
           </div>
 
-          <div className="md:col-span-7 bg-white p-6 rounded-xl border border-stone-300 shadow-sm space-y-6">
-            <h3 className="font-bold text-sm uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-3">
-              Verifikasi Foto Kondisi Alat (Pencegahan Sengketa)
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-[#f4f2eb] rounded-xl border border-stone-300 text-center space-y-3">
-                <span className="font-mono text-[10px] font-bold text-stone-600 block uppercase">// FOTO KONDISI AWAL (SERAH)</span>
-                {photoBefore ? (
-                  <img src={photoBefore} alt="Before" className="w-full h-32 object-cover rounded-xl border border-stone-300" />
-                ) : (
-                  <button onClick={() => setPhotoBefore("https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop")} className="w-full h-32 border-2 border-dashed border-stone-300 rounded-xl flex flex-col items-center justify-center text-stone-400 hover:text-stone-700 cursor-pointer bg-white">
-                    <Upload className="w-6 h-6 mb-1" />
-                    <span className="text-[10px] font-mono">Upload Foto Sebelum</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="p-4 bg-[#f4f2eb] rounded-xl border border-stone-300 text-center space-y-3">
-                <span className="font-mono text-[10px] font-bold text-stone-600 block uppercase">// FOTO KONDISI AKHIR (KEMBALI)</span>
-                {photoAfter ? (
-                  <img src={photoAfter} alt="After" className="w-full h-32 object-cover rounded-xl border border-stone-300" />
-                ) : (
-                  <button onClick={() => setPhotoAfter("https://images.unsplash.com/photo-1504280390467-336c18bf2288?w=400&auto=format&fit=crop")} className="w-full h-32 border-2 border-dashed border-stone-300 rounded-xl flex flex-col items-center justify-center text-stone-400 hover:text-stone-700 cursor-pointer bg-white">
-                    <Upload className="w-6 h-6 mb-1" />
-                    <span className="text-[10px] font-mono">Upload Foto Pengembalian</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <button onClick={() => alert("Kondisi Alat Terverifikasi Aman! Payout Dana Dijadwalkan.")} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-xl font-mono text-xs uppercase font-bold tracking-wider cursor-pointer shadow-md">
-              Konfirmasi Pengembalian & Selesaikan Transaksi
+          <div className="flex gap-2 p-1 bg-stone-200 rounded-xl font-bold text-xs">
+            <button onClick={() => setActiveTab("pemandu")} className={`px-4 py-2 rounded-lg cursor-pointer transition-colors ${activeTab === "pemandu" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
+              Pemandu Wisata
+            </button>
+            <button onClick={() => setActiveTab("pemilik")} className={`px-4 py-2 rounded-lg cursor-pointer transition-colors ${activeTab === "pemilik" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
+              Pemilik Barang
             </button>
           </div>
         </div>
+
+        {/* TAB PEMANDU WISATA */}
+        {activeTab === "pemandu" && (
+          <div className="space-y-6">
+            <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
+              <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2 text-[#1d3a28]">
+                <Bell className="w-4 h-4 text-[#c5922e]" /> Permintaan Dampingan Masuk Dari Klien
+              </h3>
+
+              <div className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
+                <div>
+                  <p className="font-bold text-sm text-stone-900">Klien: Wisatawan Subur</p>
+                  <p className="text-stone-600"><strong>Tanggal Dampingan:</strong> 15 Juni 2025 – 17 Juni 2025</p>
+                  <p className="text-stone-600"><strong>Lokasi Rute:</strong> Pantai Sulamadaha & Danau Tolire</p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button onClick={() => alert("Permintaan Disetujui! Notifikasi dikirim ke Klien untuk Pembayaran.")} className="px-4 py-2 bg-[#1d3a28] text-white rounded-xl font-bold uppercase text-[11px] cursor-pointer">
+                    Setujui Tanggal & Lokasi
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
+                <div>
+                  <p className="font-bold text-sm text-emerald-900 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#1d3a28]" /> Pembayaran Selesai — Klien: Budi Ternate</p>
+                  <p className="text-emerald-800">Sesi Room Chat Terbuka untuk Koordinasi Lanjutan.</p>
+                </div>
+                <button onClick={() => setIsChatOpen(true)} className="px-4 py-2 bg-[#1d3a28] text-white rounded-xl font-bold uppercase text-[11px] cursor-pointer flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat Klien
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB PEMILIK BARANG */}
+        {activeTab === "pemilik" && (
+          <div className="space-y-6">
+            <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
+              <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2 text-[#1d3a28]">
+                <Store className="w-4 h-4 text-[#c5922e]" /> Pesanan Masuk Dari Penyewa (Pembayaran Selesai)
+              </h3>
+
+              <div className="p-4 bg-white border border-stone-300 rounded-xl space-y-2 text-xs font-sans">
+                <div className="flex justify-between items-center border-b border-stone-200 pb-2">
+                  <span className="font-bold text-stone-900 text-sm">Penyewa: Wisatawan Subur</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">LUNAS</span>
+                </div>
+                <p className="text-stone-600"><strong>Alat Disewa:</strong> Tenda Dome 4P (1 Unit)</p>
+                <p className="text-stone-600"><strong>Periode Sewa Jauh Hari:</strong> 15 Juni 2025 – 17 Juni 2025</p>
+                <p className="text-stone-600"><strong>Pickup Point:</strong> Toko Gamalama Outdoor (Ternate Tengah)</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <RoomChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} clientName="Budi Ternate" guideName="Usman Gamalama" />
       </div>
     </main>
   );
