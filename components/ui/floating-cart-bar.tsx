@@ -1,11 +1,13 @@
-﻿"use client";
+"use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBooking } from "@/lib/context/booking-context";
 import { ShoppingBag, ArrowRight, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
 
 export function FloatingCartBar() {
+  const router = useRouter();
   const { selectedTools, selectedGuide, toggleTool, selectGuide, totalPrice, clearBooking } = useBooking();
   const [isExpanded, setIsExpanded] = React.useState(true);
   const hasItems = selectedTools.length > 0 || selectedGuide !== null;
@@ -21,7 +23,6 @@ export function FloatingCartBar() {
         className="fixed bottom-6 right-6 z-50 pointer-events-none w-80 sm:w-96 font-mono text-xs"
       >
         <div className="pointer-events-auto bg-[#f9f8f3] border border-stone-300 text-stone-900 rounded-sm p-4 shadow-2xl">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-stone-300 pb-3 mb-3">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-4 h-4 text-[#1d3a28]" />
@@ -46,7 +47,6 @@ export function FloatingCartBar() {
             </div>
           </div>
 
-          {/* List Items */}
           {isExpanded && (
             <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1 mb-3">
               {selectedTools.map((tool) => (
@@ -89,7 +89,6 @@ export function FloatingCartBar() {
             </div>
           )}
 
-          {/* Total & Checkout */}
           <div className="pt-2 border-t border-stone-300 flex items-center justify-between">
             <div>
               <span className="text-[10px] text-stone-500 block font-mono">TOTAL BIAYA</span>
@@ -97,7 +96,7 @@ export function FloatingCartBar() {
             </div>
             <button
               type="button"
-              onClick={() => alert(`Checkout Transaksi Senilai: Rp ${totalPrice.toLocaleString("id-ID")}`)}
+              onClick={() => router.push("/checkout")}
               className="bg-[#1d3a28] hover:bg-[#152a1b] text-white px-4 py-2 rounded-sm font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer shadow-md border border-[#1d3a28]"
             >
               <span>Checkout</span>
