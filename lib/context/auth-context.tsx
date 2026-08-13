@@ -9,13 +9,16 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
+  origin: string; // Asal
+  address: string; // Alamat
+  gender: "Laki-laki" | "Perempuan";
   role: UserRole;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
-  login: (email: string, role?: UserRole) => boolean;
-  register: (name: string, email: string, phone: string, role: UserRole) => void;
+  login: (email: string) => boolean;
+  register: (profile: Omit<UserProfile, "id">) => void;
   logout: () => void;
 }
 
@@ -23,26 +26,26 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([
+    { id: "ADM-1", name: "SuperAdmin Gamtara", email: "admin@gamtara.com", phone: "081234567890", origin: "Ternate", address: "Kantor Pusat Gamtara", gender: "Laki-laki", role: "admin" }
+  ]);
 
-  const login = (email: string, targetRole: UserRole = "customer") => {
-    setUser({
-      id: `USR-${Date.now().toString().slice(-4)}`,
-      name: email.split("@")[0].toUpperCase(),
-      email: email,
-      phone: "081234567890",
-      role: targetRole,
-    });
-    return true;
+  const login = (email: string) => {
+    const found = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (found) {
+      setUser(found);
+      return true;
+    }
+    return false;
   };
 
-  const register = (name: string, email: string, phone: string, role: UserRole) => {
-    setUser({
+  const register = (profileData: Omit<UserProfile, "id">) => {
+    const newUser: UserProfile = {
+      ...profileData,
       id: `USR-${Date.now().toString().slice(-4)}`,
-      name,
-      email,
-      phone,
-      role,
-    });
+    };
+    setRegisteredUsers((prev) => [...prev, newUser]);
+    setUser(newUser);
   };
 
   const logout = () => setUser(null);

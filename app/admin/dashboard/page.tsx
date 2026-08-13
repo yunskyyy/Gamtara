@@ -1,10 +1,30 @@
-"use client";
+﻿"use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/features/landing/navbar";
-import { ShieldAlert, DollarSign } from "lucide-react";
+import { useAuth } from "@/lib/context/auth-context";
+import { ShieldAlert, ShieldX, DollarSign } from "lucide-react";
 
 export default function AdminDashboardPage() {
+  const { user } = useAuth();
+
+  if (user?.role !== "admin") {
+    return (
+      <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
+        <Navbar />
+        <div className="max-w-md mx-auto bg-white p-8 rounded-2xl border border-stone-300 shadow-lg mt-12 space-y-4">
+          <ShieldX className="w-12 h-12 text-rose-600 mx-auto" />
+          <h2 className="text-2xl font-extrabold">Akses Ditolak</h2>
+          <p className="text-xs text-stone-600">Halaman ini adalah Pusat Kendali SuperAdmin. Akun Anda tidak memiliki otorisasi akses.</p>
+          <Link href="/" className="inline-block bg-[#1d3a28] text-white px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider">
+            Kembali ke Beranda
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900">
       <Navbar />

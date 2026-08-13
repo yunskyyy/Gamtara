@@ -1,9 +1,9 @@
-"use client";
+ï»¿"use client";
 
 import * as React from "react";
 import { Navbar } from "@/components/features/landing/navbar";
 import { RoomChatModal } from "@/components/features/chat/room-chat-modal";
-import { CheckCircle2, Clock, MessageSquare, Bell, Store, UserCheck } from "lucide-react";
+import { CheckCircle2, MessageSquare, Bell, Store } from "lucide-react";
 
 export default function VendorDashboardPage() {
   const [activeTab, setActiveTab] = React.useState<"pemilik" | "pemandu">("pemandu");
@@ -29,7 +29,6 @@ export default function VendorDashboardPage() {
           </div>
         </div>
 
-        {/* TAB PEMANDU WISATA */}
         {activeTab === "pemandu" && (
           <div className="space-y-6">
             <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
@@ -40,7 +39,7 @@ export default function VendorDashboardPage() {
               <div className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
                 <div>
                   <p className="font-bold text-sm text-stone-900">Klien: Wisatawan Subur</p>
-                  <p className="text-stone-600"><strong>Tanggal Dampingan:</strong> 15 Juni 2025 – 17 Juni 2025</p>
+                  <p className="text-stone-600"><strong>Tanggal Dampingan:</strong> 15 Juni 2025 - 17 Juni 2025</p>
                   <p className="text-stone-600"><strong>Lokasi Rute:</strong> Pantai Sulamadaha & Danau Tolire</p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
@@ -52,7 +51,7 @@ export default function VendorDashboardPage() {
 
               <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
                 <div>
-                  <p className="font-bold text-sm text-emerald-900 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#1d3a28]" /> Pembayaran Selesai — Klien: Budi Ternate</p>
+                  <p className="font-bold text-sm text-emerald-900 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#1d3a28]" /> Pembayaran Selesai - Klien: Budi Ternate</p>
                   <p className="text-emerald-800">Sesi Room Chat Terbuka untuk Koordinasi Lanjutan.</p>
                 </div>
                 <button onClick={() => setIsChatOpen(true)} className="px-4 py-2 bg-[#1d3a28] text-white rounded-xl font-bold uppercase text-[11px] cursor-pointer flex items-center gap-1.5">
@@ -63,7 +62,6 @@ export default function VendorDashboardPage() {
           </div>
         )}
 
-        {/* TAB PEMILIK BARANG */}
         {activeTab === "pemilik" && (
           <div className="space-y-6">
             <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
@@ -77,7 +75,7 @@ export default function VendorDashboardPage() {
                   <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">LUNAS</span>
                 </div>
                 <p className="text-stone-600"><strong>Alat Disewa:</strong> Tenda Dome 4P (1 Unit)</p>
-                <p className="text-stone-600"><strong>Periode Sewa Jauh Hari:</strong> 15 Juni 2025 – 17 Juni 2025</p>
+                <p className="text-stone-600"><strong>Periode Sewa Jauh Hari:</strong> 15 Juni 2025 - 17 Juni 2025</p>
                 <p className="text-stone-600"><strong>Pickup Point:</strong> Toko Gamalama Outdoor (Ternate Tengah)</p>
               </div>
             </div>
