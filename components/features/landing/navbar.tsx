@@ -13,24 +13,42 @@ export function Navbar() {
   const [isAuthOpen, setIsAuthOpen] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setIsAuthOpen(true);
+    }
+  };
+
   return (
     <>
-      <motion.header className="fixed top-0 left-0 right-0 z-40 flex flex-col items-center pt-4 px-4 pointer-events-none">
+      <motion.header
+        initial={{ y: -40, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 left-0 right-0 z-40 flex flex-col items-center pt-4 px-4 pointer-events-none"
+      >
         <nav className="pointer-events-auto flex items-center justify-between w-full max-w-5xl px-4 sm:px-8 py-1 bg-[#f4f2eb]/95 backdrop-blur-md border border-stone-300/80 rounded-xl shadow-md text-stone-900">
           
           <Link href="/" className="flex items-center cursor-pointer py-0.5">
             <Logo variant="full" height={48} />
           </Link>
 
+          {/* Navigasi Utama - Menu PROFIL SAYA Ditampilkan Jelas */}
           <ul className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase">
             <li><Link href="/" className="hover:text-[#1d3a28] transition-colors">Beranda</Link></li>
             <li><Link href="/tools" className="hover:text-[#1d3a28] transition-colors">Sewa Alat</Link></li>
             <li><Link href="/guides" className="hover:text-[#1d3a28] transition-colors">Pemandu Wisata</Link></li>
+            <li>
+              <Link href="/profile" onClick={handleProfileClick} className="hover:text-[#1d3a28] transition-colors flex items-center gap-1 font-extrabold text-[#1d3a28]">
+                <User className="w-3.5 h-3.5" /> Profil Saya
+              </Link>
+            </li>
             {user?.role === "admin" && (
-              <li><Link href="/admin/dashboard" className="text-rose-700 font-extrabold hover:underline">Dashboard Admin</Link></li>
+              <li><Link href="/admin/dashboard" className="text-rose-700 font-extrabold hover:underline">Admin</Link></li>
             )}
             {(user?.role === "pemilik" || user?.role === "pemandu") && (
-              <li><Link href="/vendor/dashboard" className="text-[#1d3a28] font-extrabold hover:underline">Dashboard Mitra</Link></li>
+              <li><Link href="/vendor/dashboard" className="text-[#1d3a28] font-extrabold hover:underline">Mitra</Link></li>
             )}
           </ul>
 
@@ -38,7 +56,7 @@ export function Navbar() {
             {user ? (
               <div className="flex items-center gap-2">
                 <Link href="/profile" className="text-xs font-bold text-[#1d3a28] bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer">
-                  <User className="w-3.5 h-3.5" /> {user.name} (Profil Saya)
+                  <User className="w-3.5 h-3.5" /> {user.name}
                 </Link>
                 <button onClick={logout} className="p-2 bg-stone-200 hover:bg-stone-300 rounded-xl cursor-pointer text-stone-700" title="Keluar">
                   <LogOut className="w-4 h-4" />
@@ -56,13 +74,16 @@ export function Navbar() {
           </div>
         </nav>
 
+        {/* Mobile Dropdown */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div className="pointer-events-auto md:hidden w-full max-w-5xl mt-2 bg-[#f4f2eb] border border-stone-300 rounded-xl p-4 shadow-xl text-xs font-bold uppercase tracking-wider text-stone-800 space-y-3">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Beranda</Link>
               <Link href="/tools" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Sewa Alat</Link>
               <Link href="/guides" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Pemandu Wisata</Link>
-              {user && <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg bg-emerald-100 text-[#1d3a28]">Profil Saya ({user.name})</Link>}
+              <Link href="/profile" onClick={(e) => { setIsMobileMenuOpen(false); handleProfileClick(e); }} className="block py-2 px-3 rounded-lg bg-emerald-100 text-[#1d3a28]">
+                Profil Saya {user ? `(${user.name})` : ""}
+              </Link>
             </motion.div>
           )}
         </AnimatePresence>
