@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { MOCK_TOOLS, ToolItem } from "@/lib/data/mock-tourism-data";
 import { MediaPreviewModal, PreviewData } from "@/components/ui/media-preview-modal";
 import { AuthModal } from "@/components/features/auth/auth-modal";
+import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
 import { Search, CheckCircle2, Check, MapPin, Eye, Store } from "lucide-react";
 
 export default function ToolsCatalogPage() {
@@ -18,6 +19,7 @@ export default function ToolsCatalogPage() {
   const [search, setSearch] = React.useState("");
   const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isPromptOpen, setIsPromptOpen] = React.useState(false);
 
   const ownerList = ["Semua Toko", ...Array.from(new Set(MOCK_TOOLS.map((t) => t.ownerName)))];
 
@@ -30,8 +32,7 @@ export default function ToolsCatalogPage() {
 
   const handleSelectTool = (tool: ToolItem) => {
     if (!user) {
-      alert("Akses Diperlukan! Silakan Masuk/Daftar akun terlebih dahulu untuk memilih peralatan.");
-      setIsAuthModalOpen(true);
+      setIsPromptOpen(true);
       return;
     }
     toggleTool({ id: tool.id, name: tool.name, price: tool.price, img: tool.img });
@@ -106,6 +107,7 @@ export default function ToolsCatalogPage() {
       </div>
 
       <MediaPreviewModal data={previewData} onClose={() => setPreviewData(null)} />
+      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="memilih peralatan sewa" />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </main>
   );

@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { MOCK_GUIDES, GuideItem } from "@/lib/data/mock-tourism-data";
 import { MediaPreviewModal, PreviewData } from "@/components/ui/media-preview-modal";
 import { AuthModal } from "@/components/features/auth/auth-modal";
+import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
 import { CheckCircle2, Clock, MapPin, Send, Eye, X, ListOrdered } from "lucide-react";
 
 const specialtySpots = ["Semua Tempat", "Pantai Sulamadaha", "Gunung Gamalama", "Pulau Maitara", "Benteng Tolukko", "Batu Angus", "Danau Ngade"];
@@ -21,13 +22,13 @@ export default function GuidesCatalogPage() {
   const [chosenSpot, setChosenSpot] = React.useState<string>("");
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
+  const [isPromptOpen, setIsPromptOpen] = React.useState(false);
 
   const filtered = MOCK_GUIDES.filter((g) => selectedSpot === "Semua Tempat" || g.specialtySpots.includes(selectedSpot));
 
   const handleOpenRequest = (guide: GuideItem) => {
     if (!user) {
-      alert("Akses Diperlukan! Silakan Masuk/Daftar akun terlebih dahulu untuk meminta pemandu wisata.");
-      setIsAuthModalOpen(true);
+      setIsPromptOpen(true);
       return;
     }
     setRequestTargetGuide(guide);
@@ -160,6 +161,7 @@ export default function GuidesCatalogPage() {
       )}
 
       <MediaPreviewModal data={previewData} onClose={() => setPreviewData(null)} />
+      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="meminta pemandu wisata" />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </main>
   );
