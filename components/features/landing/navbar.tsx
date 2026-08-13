@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/logo";
 import { AuthModal } from "@/components/features/auth/auth-modal";
 import { useAuth } from "@/lib/context/auth-context";
-import { Menu, X, User, LogOut, Shield, Store } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -37,9 +37,9 @@ export function Navbar() {
           <div className="flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#1d3a28] bg-emerald-100 px-3 py-1 rounded-xl flex items-center gap-1">
-                  <User className="w-3.5 h-3.5" /> {user.name} ({user.role})
-                </span>
+                <Link href="/profile" className="text-xs font-bold text-[#1d3a28] bg-emerald-100 hover:bg-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer">
+                  <User className="w-3.5 h-3.5" /> {user.name} (Profil Saya)
+                </Link>
                 <button onClick={logout} className="p-2 bg-stone-200 hover:bg-stone-300 rounded-xl cursor-pointer text-stone-700" title="Keluar">
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -55,6 +55,17 @@ export function Navbar() {
             </button>
           </div>
         </nav>
+
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div className="pointer-events-auto md:hidden w-full max-w-5xl mt-2 bg-[#f4f2eb] border border-stone-300 rounded-xl p-4 shadow-xl text-xs font-bold uppercase tracking-wider text-stone-800 space-y-3">
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Beranda</Link>
+              <Link href="/tools" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Sewa Alat</Link>
+              <Link href="/guides" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg hover:bg-stone-200">Pemandu Wisata</Link>
+              {user && <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-lg bg-emerald-100 text-[#1d3a28]">Profil Saya ({user.name})</Link>}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.header>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
