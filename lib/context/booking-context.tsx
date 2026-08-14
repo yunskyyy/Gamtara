@@ -9,6 +9,13 @@ export interface SelectedTool {
   img: string;
 }
 
+export interface SelectedGuide {
+  id: string;
+  name: string;
+  price: number;
+  avatar: string;
+}
+
 export interface GuideRequest {
   id: string;
   guideId: string;
@@ -21,8 +28,10 @@ export interface GuideRequest {
 
 interface BookingContextType {
   selectedTools: SelectedTool[];
+  selectedGuide: SelectedGuide | null;
   guideRequests: GuideRequest[];
   toggleTool: (tool: SelectedTool) => void;
+  selectGuide: (guide: SelectedGuide | null) => void;
   createGuideRequest: (guide: { id: string; name: string; price: number; avatar: string }, destination: string) => void;
   cancelGuideRequest: (requestId: string) => void;
   clearBooking: () => void;
@@ -33,12 +42,17 @@ const BookingContext = React.createContext<BookingContextType | undefined>(undef
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [selectedTools, setSelectedTools] = React.useState<SelectedTool[]>([]);
+  const [selectedGuide, setSelectedGuide] = React.useState<SelectedGuide | null>(null);
   const [guideRequests, setGuideRequests] = React.useState<GuideRequest[]>([]);
 
   const toggleTool = (tool: SelectedTool) => {
     setSelectedTools((prev) =>
       prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]
     );
+  };
+
+  const selectGuide = (guide: SelectedGuide | null) => {
+    setSelectedGuide(guide);
   };
 
   const createGuideRequest = (guide: { id: string; name: string; price: number; avatar: string }, destination: string) => {
@@ -60,15 +74,18 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   const clearBooking = () => {
     setSelectedTools([]);
+    setSelectedGuide(null);
   };
 
   const totalPrice = React.useMemo(() => {
-    return selectedTools.reduce((acc, item) => acc + item.price, 0);
-  }, [selectedTools]);
+    const toolsTotal = selectedTools.reduce((acc, item) => acc + item.price, 0);
+    const guideTotal = selectedGuide ? selectedGuide.price : 0;
+    return toolsTotal + guideTotal;
+  }, [selectedTools, selectedGuide]);
 
   return (
     <BookingContext.Provider
-      value={{ selectedTools, guideRequests, toggleTool, createGuideRequest, cancelGuideRequest, clearBooking, totalPrice }}
+      value={{ selectedTools, selectedGuide, guideRequests, toggleTool, selectGuide, createGuideRequest, cancelGuideRequest, clearBooking, totalPrice }}
     >
       {children}
     </BookingContext.Provider>
