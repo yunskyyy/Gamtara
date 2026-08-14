@@ -1,88 +1,142 @@
 ﻿"use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/features/landing/navbar";
-import { RoomChatModal } from "@/components/features/chat/room-chat-modal";
-import { CheckCircle2, MessageSquare, Bell, Store } from "lucide-react";
+import { useBooking } from "@/lib/context/booking-context";
+import { Camera, CheckCircle2, MessageSquare, Store, Upload, Check, X } from "lucide-react";
 
 export default function VendorDashboardPage() {
   const [activeTab, setActiveTab] = React.useState<"pemilik" | "pemandu">("pemandu");
-  const [isChatOpen, setIsChatOpen] = React.useState(false);
+  const { guideRequests, storeOrders, updateGuideStatus } = useBooking();
+
+  const [photoBefore, setPhotoBefore] = React.useState<string | null>(null);
+  const [photoAfter, setPhotoAfter] = React.useState<string | null>(null);
+  const [scannedCode, setScannedCode] = React.useState<string | null>(null);
 
   return (
-    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900">
+    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
       <Navbar />
       <div className="max-w-5xl mx-auto space-y-8">
+        
         <div className="border-b border-stone-300 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
             <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// DASHBOARD OPERASIONAL MITRA</span>
             <h1 className="text-4xl font-extrabold tracking-tight mt-1">Portal Mitra GAMTARA</h1>
           </div>
 
-          <div className="flex gap-2 p-1 bg-stone-200 rounded-xl font-bold text-xs">
-            <button onClick={() => setActiveTab("pemandu")} className={`px-4 py-2 rounded-lg cursor-pointer transition-colors ${activeTab === "pemandu" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
+          <div className="flex gap-2 p-1 bg-stone-200 rounded-sm font-bold text-xs font-mono">
+            <button onClick={() => setActiveTab("pemandu")} className={`px-4 py-2 rounded-sm cursor-pointer transition-colors ${activeTab === "pemandu" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
               Pemandu Wisata
             </button>
-            <button onClick={() => setActiveTab("pemilik")} className={`px-4 py-2 rounded-lg cursor-pointer transition-colors ${activeTab === "pemilik" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
+            <button onClick={() => setActiveTab("pemilik")} className={`px-4 py-2 rounded-sm cursor-pointer transition-colors ${activeTab === "pemilik" ? "bg-[#1d3a28] text-white" : "text-stone-700"}`}>
               Pemilik Barang
             </button>
           </div>
         </div>
 
+        {/* TAB PEMANDU WISATA (RIWAYAT LENGKAP: MENUNGGU, DISETUJUI, DITOLAK, SELESAI) */}
         {activeTab === "pemandu" && (
           <div className="space-y-6">
-            <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
-              <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2 text-[#1d3a28]">
-                <Bell className="w-4 h-4 text-[#c5922e]" /> Permintaan Dampingan Masuk Dari Klien
+            <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-4">
+              <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-[#1d3a28] border-b border-stone-200 pb-3">
+                // DAFTAR PERMINTAAN DAMPINGAN MASUK
               </h3>
 
-              <div className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
-                <div>
-                  <p className="font-bold text-sm text-stone-900">Klien: Wisatawan Subur</p>
-                  <p className="text-stone-600"><strong>Tanggal Dampingan:</strong> 15 Juni 2025 - 17 Juni 2025</p>
-                  <p className="text-stone-600"><strong>Lokasi Rute:</strong> Pantai Sulamadaha & Danau Tolire</p>
+              {guideRequests.map((req) => (
+                <div key={req.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+                  <div>
+                    <p className="font-bold text-sm text-stone-900">Klien: {req.clientName}</p>
+                    <p className="text-stone-600 font-mono">Destinasi: {req.selectedDestination} • Jadwal: {req.tourDate}</p>
+                    <span className="inline-block mt-1 px-2.5 py-0.5 bg-stone-200 text-stone-800 font-mono text-[10px] font-bold uppercase">
+                      STATUS: {req.status}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {req.status === "MENUNGGU" && (
+                      <>
+                        <button onClick={() => updateGuideStatus(req.id, "DISETUJUI")} className="px-3.5 py-2 bg-[#1d3a28] text-white rounded-sm font-bold text-xs uppercase flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Setujui
+                        </button>
+                        <button onClick={() => updateGuideStatus(req.id, "DITOLAK")} className="px-3.5 py-2 bg-rose-600 text-white rounded-sm font-bold text-xs uppercase flex items-center gap-1">
+                          <X className="w-3.5 h-3.5" /> Tolak
+                        </button>
+                      </>
+                    )}
+                    {req.status === "LUNAS" && (
+                      <Link href={`/chat/${req.id}`} className="px-4 py-2 bg-[#1d3a28] text-white rounded-sm font-bold text-xs uppercase flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat Klien
+                      </Link>
+                    )}
+                  </div>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button onClick={() => alert("Permintaan Disetujui! Notifikasi dikirim ke Klien untuk Pembayaran.")} className="px-4 py-2 bg-[#1d3a28] text-white rounded-xl font-bold uppercase text-[11px] cursor-pointer">
-                    Setujui Tanggal & Lokasi
-                  </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB PEMILIK BARANG (SCAN QR & UPLOAD FOTO BEFORE/AFTER) */}
+        {activeTab === "pemilik" && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* Scan QR Tiket */}
+              <div className="md:col-span-5 bg-stone-900 text-white p-6 rounded-sm border border-stone-800 space-y-4 text-center">
+                <span className="font-mono text-[10px] text-[#c5922e] uppercase font-bold tracking-widest block">// SCAN QRCODE PENYEWA</span>
+                <div className="w-40 h-40 mx-auto bg-stone-800 border-2 border-dashed border-stone-600 rounded-sm flex flex-col items-center justify-center p-4">
+                  <Camera className="w-8 h-8 text-emerald-400 mb-2 animate-pulse" />
+                  <span className="text-[10px] font-mono text-stone-400">Arahkan Kamera ke E-Tiket</span>
                 </div>
+                <button onClick={() => setScannedCode("TRX-GAMTARA-7890")} className="w-full py-2.5 bg-[#1d3a28] text-white font-mono text-xs uppercase font-bold rounded-sm cursor-pointer">
+                  Simulasi Scan Tiket
+                </button>
+                {scannedCode && (
+                  <p className="text-xs text-emerald-400 font-mono font-bold flex items-center justify-center gap-1">
+                    <CheckCircle2 className="w-4 h-4" /> Tiket Valid: {scannedCode}
+                  </p>
+                )}
               </div>
 
-              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs font-sans">
-                <div>
-                  <p className="font-bold text-sm text-emerald-900 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#1d3a28]" /> Pembayaran Selesai - Klien: Budi Ternate</p>
-                  <p className="text-emerald-800">Sesi Room Chat Terbuka untuk Koordinasi Lanjutan.</p>
+              {/* Upload Foto Kondisi Sebelum & Sesudah */}
+              <div className="md:col-span-7 bg-white border border-stone-300 rounded-sm p-6 space-y-4">
+                <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-2">
+                  // VERIFIKASI FOTO KONDISI BARANG
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-[#f4f2eb] border border-stone-300 rounded-sm text-center space-y-2">
+                    <span className="text-[10px] font-mono font-bold block">FOTO SERAH (AWAL)</span>
+                    {photoBefore ? (
+                      <img src={photoBefore} alt="Before" className="w-full h-24 object-cover rounded-sm" />
+                    ) : (
+                      <button onClick={() => setPhotoBefore("https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop")} className="w-full h-24 border border-dashed border-stone-400 rounded-sm flex flex-col items-center justify-center text-stone-500 bg-white cursor-pointer">
+                        <Upload className="w-5 h-5 mb-1" />
+                        <span className="text-[9px] font-mono">Upload Foto Awal</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="p-3 bg-[#f4f2eb] border border-stone-300 rounded-sm text-center space-y-2">
+                    <span className="text-[10px] font-mono font-bold block">FOTO KEMBALI (AKHIR)</span>
+                    {photoAfter ? (
+                      <img src={photoAfter} alt="After" className="w-full h-24 object-cover rounded-sm" />
+                    ) : (
+                      <button onClick={() => setPhotoAfter("https://images.unsplash.com/photo-1504280390467-336c18bf2288?w=400&auto=format&fit=crop")} className="w-full h-24 border border-dashed border-stone-400 rounded-sm flex flex-col items-center justify-center text-stone-500 bg-white cursor-pointer">
+                        <Upload className="w-5 h-5 mb-1" />
+                        <span className="text-[9px] font-mono">Upload Foto Akhir</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => setIsChatOpen(true)} className="px-4 py-2 bg-[#1d3a28] text-white rounded-xl font-bold uppercase text-[11px] cursor-pointer flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat Klien
+
+                <button onClick={() => alert("Pengembalian Barang Selesai & Payout Dijadwalkan!")} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-mono text-xs uppercase font-bold rounded-sm cursor-pointer shadow-md">
+                  Konfirmasi Pengembalian Barang
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === "pemilik" && (
-          <div className="space-y-6">
-            <div className="bg-white border border-stone-300 rounded-xl p-6 shadow-sm space-y-4">
-              <h3 className="font-bold text-sm uppercase tracking-wider flex items-center gap-2 text-[#1d3a28]">
-                <Store className="w-4 h-4 text-[#c5922e]" /> Pesanan Masuk Dari Penyewa (Pembayaran Selesai)
-              </h3>
-
-              <div className="p-4 bg-white border border-stone-300 rounded-xl space-y-2 text-xs font-sans">
-                <div className="flex justify-between items-center border-b border-stone-200 pb-2">
-                  <span className="font-bold text-stone-900 text-sm">Penyewa: Wisatawan Subur</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">LUNAS</span>
-                </div>
-                <p className="text-stone-600"><strong>Alat Disewa:</strong> Tenda Dome 4P (1 Unit)</p>
-                <p className="text-stone-600"><strong>Periode Sewa Jauh Hari:</strong> 15 Juni 2025 - 17 Juni 2025</p>
-                <p className="text-stone-600"><strong>Pickup Point:</strong> Toko Gamalama Outdoor (Ternate Tengah)</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <RoomChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} clientName="Budi Ternate" guideName="Usman Gamalama" />
       </div>
     </main>
   );
