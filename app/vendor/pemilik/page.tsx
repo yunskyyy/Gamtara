@@ -19,8 +19,8 @@ export default function PemilikDashboardPage() {
       <Navbar />
       <div className="max-w-5xl mx-auto space-y-8">
         <div className="border-b border-stone-300 pb-6">
-          <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// DASHBOARD OPERASIONAL TOKO ALAT</span>
-          <h1 className="text-4xl font-extrabold tracking-tight mt-1">Portal Pemilik Barang</h1>
+          <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// PORTAL KHUSUS PEMILIK BARANG</span>
+          <h1 className="text-4xl font-extrabold tracking-tight mt-1">Dashboard Toko & Alat Sewa</h1>
         </div>
 
         {/* 1. Inbox Chat Penyewa yang Sudah Lunas */}
@@ -28,17 +28,21 @@ export default function PemilikDashboardPage() {
           <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-[#1d3a28] border-b border-stone-200 pb-2 flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-[#c5922e]" /> // INBOX CHAT PENYEWA (PEMBAYARAN LUNAS)
           </h3>
-          {lunasOrders.map((ord) => (
-            <div key={ord.orderId} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm flex justify-between items-center text-xs">
-              <div>
-                <p className="font-bold text-sm text-stone-900">Penyewa: {ord.clientName}</p>
-                <p className="text-stone-600 font-mono">ID Pesanan: {ord.orderId} • Jadwal: {ord.startDate} s/d {ord.endDate}</p>
+          {lunasOrders.length === 0 ? (
+            <p className="text-xs text-stone-500 font-mono py-2">Belum ada pesanan lunas masuk dari penyewa.</p>
+          ) : (
+            lunasOrders.map((ord) => (
+              <div key={ord.orderId} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm flex justify-between items-center text-xs">
+                <div>
+                  <p className="font-bold text-sm text-stone-900">Penyewa: {ord.clientName}</p>
+                  <p className="text-stone-600 font-mono">ID Pesanan: {ord.orderId} • Jadwal: {ord.startDate} s/d {ord.endDate}</p>
+                </div>
+                <Link href={`/chat/${ord.orderId}`} className="px-4 py-2 bg-[#1d3a28] text-white text-xs font-bold uppercase font-mono rounded-sm flex items-center gap-1.5">
+                  <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat
+                </Link>
               </div>
-              <Link href={`/chat/${ord.orderId}`} className="px-4 py-2 bg-[#1d3a28] text-white text-xs font-bold uppercase font-mono rounded-sm flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat
-              </Link>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
         {/* 2. Verifikasi QR & Foto Before/After */}
@@ -47,7 +51,7 @@ export default function PemilikDashboardPage() {
             <span className="font-mono text-[10px] text-[#c5922e] uppercase font-bold tracking-widest block">// SCAN QR TIKET PENYEWA</span>
             <div className="w-40 h-40 mx-auto bg-stone-800 border border-dashed border-stone-600 rounded-sm flex flex-col items-center justify-center p-4">
               <Camera className="w-8 h-8 text-emerald-400 mb-2 animate-pulse" />
-              <span className="text-[10px] font-mono text-stone-400">Arahkan Kamera</span>
+              <span className="text-[10px] font-mono text-stone-400">Arahkan Kamera ke E-Tiket</span>
             </div>
             <button onClick={() => setScannedCode("TRX-GAMTARA-7890")} className="w-full py-2.5 bg-[#1d3a28] text-white font-mono text-xs uppercase font-bold rounded-sm cursor-pointer">
               Simulasi Scan Tiket

@@ -61,28 +61,11 @@ interface BookingContextType {
 const BookingContext = React.createContext<BookingContextType | undefined>(undefined);
 
 export function BookingProvider({ children }: { children: React.ReactNode }) {
+  // STATE BERSIH TANPA DATA DUMMY
   const [selectedTools, setSelectedTools] = React.useState<ToolOrderItem[]>([]);
-  const [storeOrders, setStoreOrders] = React.useState<StoreOrderGroup[]>([
-    {
-      orderId: "ORD-TOKO-7890",
-      ownerName: "Toko Gamalama Outdoor",
-      clientName: "Wisatawan Subur",
-      items: [{ id: "t1", name: "Tenda Dome 4P", price: 50000, ownerName: "Toko Gamalama Outdoor", img: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop" }],
-      totalPrice: 50000,
-      startDate: "2025-06-15",
-      endDate: "2025-06-17",
-      status: "LUNAS",
-    }
-  ]);
-
-  const [guideRequests, setGuideRequests] = React.useState<GuideRequest[]>([
-    { id: "REQ-901", guideId: "g1", guideName: "Fikri Subur", clientName: "Wisatawan Subur", selectedDestination: "Pantai Sulamadaha", tourDate: "2025-06-15", price: 150000, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop", status: "LUNAS" }
-  ]);
-
-  const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([
-    { id: "m1", orderOrRequestId: "REQ-901", sender: "Fikri Subur", text: "Halo Klien! Pembayaran telah lunas. Sampai jumpa di titik kumpul!", time: "09:00" },
-    { id: "m2", orderOrRequestId: "ORD-TOKO-7890", sender: "Toko Gamalama Outdoor", text: "Halo Penyewa! Alat tenda Anda sudah siap diambil di toko.", time: "09:30" }
-  ]);
+  const [storeOrders, setStoreOrders] = React.useState<StoreOrderGroup[]>([]);
+  const [guideRequests, setGuideRequests] = React.useState<GuideRequest[]>([]);
+  const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]);
 
   const toggleTool = (tool: ToolOrderItem) => {
     setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);

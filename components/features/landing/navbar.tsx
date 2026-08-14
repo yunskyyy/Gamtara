@@ -34,7 +34,7 @@ export function Navbar() {
             <Logo variant="full" height={48} />
           </Link>
 
-          <ul className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase">
+          <ul className="hidden md:flex items-center gap-7 text-xs font-bold tracking-wider text-stone-700 uppercase">
             <li><Link href="/" className="hover:text-[#1d3a28] transition-colors">Beranda</Link></li>
             <li><Link href="/tools" className="hover:text-[#1d3a28] transition-colors">Sewa Alat</Link></li>
             <li><Link href="/guides" className="hover:text-[#1d3a28] transition-colors">Pemandu Wisata</Link></li>
@@ -43,11 +43,15 @@ export function Navbar() {
                 <User className="w-3.5 h-3.5" /> Profil Saya
               </Link>
             </li>
-            {user?.role === "admin" && (
-              <li><Link href="/admin/dashboard" className="text-rose-700 font-extrabold hover:underline">Admin</Link></li>
+            {/* Dashboard Terpisah Berdasarkan Role */}
+            {user?.role === "pemilik" && (
+              <li><Link href="/vendor/pemilik" className="text-[#1d3a28] font-extrabold hover:underline">Dashboard Pemilik</Link></li>
             )}
-            {(user?.role === "pemilik" || user?.role === "pemandu") && (
-              <li><Link href="/vendor/dashboard" className="text-[#1d3a28] font-extrabold hover:underline">Mitra</Link></li>
+            {user?.role === "pemandu" && (
+              <li><Link href="/vendor/pemandu" className="text-[#1d3a28] font-extrabold hover:underline">Dashboard Pemandu</Link></li>
+            )}
+            {user?.role === "admin" && (
+              <li><Link href="/admin/dashboard" className="text-rose-700 font-extrabold hover:underline">Dashboard Admin</Link></li>
             )}
           </ul>
 
@@ -82,6 +86,9 @@ export function Navbar() {
               <Link href="/profile" onClick={(e) => { setIsMobileMenuOpen(false); handleProfileClick(e); }} className="block py-2 px-3 rounded-sm bg-emerald-100 text-[#1d3a28]">
                 Profil Saya {user ? `(${user.name})` : ""}
               </Link>
+              {user?.role === "pemilik" && <Link href="/vendor/pemilik" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-sm font-bold text-[#1d3a28]">Dashboard Pemilik</Link>}
+              {user?.role === "pemandu" && <Link href="/vendor/pemandu" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-sm font-bold text-[#1d3a28]">Dashboard Pemandu</Link>}
+              {user?.role === "admin" && <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded-sm font-bold text-rose-700">Dashboard Admin</Link>}
             </motion.div>
           )}
         </AnimatePresence>
