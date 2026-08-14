@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import * as React from "react";
-import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { Playfair_Display } from "next/font/google";
 import { MOCK_DESTINATIONS, DestinationData } from "@/lib/data/mock-tourism-data";
@@ -14,39 +13,38 @@ interface SectionsProps {
 
 export function DestinationSections({ onSelectDestination }: SectionsProps) {
   return (
-    <div className="w-full bg-[#f5f3ec] py-20 px-4 sm:px-10 space-y-28 sm:space-y-40 text-stone-900">
-      {MOCK_DESTINATIONS.map((dest, idx) => {
-        const isEven = idx % 2 === 1;
+    <div className="w-full bg-[#f4f2eb] py-20 px-4 sm:px-10">
+      <div className="max-w-7xl mx-auto space-y-20">
+        {MOCK_DESTINATIONS.map((dest, idx) => {
+          const isEven = idx % 2 === 1;
 
-        return (
-          <section key={dest.id} className="relative w-full max-w-7xl mx-auto">
-            <div className="flex items-center justify-between border-b border-stone-300 pb-3 mb-6 font-mono text-xs text-stone-600 uppercase tracking-widest">
-              <span>[ DESTINATION INDEX N°0{idx + 1} ]</span>
-              <span className="font-bold text-stone-800">MALUKU UTARA — {dest.tag}</span>
-            </div>
-
-            <div className="relative w-full h-[78vh] min-h-[520px] rounded-sm overflow-hidden border border-stone-300 shadow-xl group bg-stone-900">
-              <img src={dest.img} alt={dest.title} className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105 opacity-90" />
-              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/85 via-stone-950/25 to-transparent" />
-
-              <div className={`absolute inset-0 p-8 sm:p-14 flex flex-col justify-end ${isEven ? "items-end text-right" : "items-start text-left"}`}>
-                <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className={`max-w-xl flex flex-col ${isEven ? "items-end" : "items-start"}`}>
-                  <h2 className={`${playfair.className} text-5xl sm:text-7xl font-black italic text-stone-100 mb-4 leading-none tracking-tight drop-shadow-md`}>
-                    {dest.title}
-                  </h2>
-                  <p className="text-stone-200 text-sm sm:text-base font-light mb-8 leading-relaxed max-w-md drop-shadow">
-                    {dest.desc}
-                  </p>
-                  <button onClick={() => onSelectDestination(dest)} className="inline-flex items-center gap-3 bg-stone-900 hover:bg-[#1d3a28] text-stone-100 px-7 py-3.5 rounded-sm font-mono text-xs uppercase tracking-widest transition-all duration-300 shadow-lg border border-stone-700 cursor-pointer">
-                    <span>Eksplorasi Detail & Guide</span>
-                    <ArrowUpRight className="w-4 h-4 text-[#c5922e]" />
-                  </button>
-                </motion.div>
+          return (
+            <section key={dest.id} className="w-full border border-stone-300 bg-white flex flex-col lg:flex-row">
+              {/* Image Side (Flat, Sharp) */}
+              <div className={`w-full lg:w-1/2 h-[400px] lg:h-[500px] border-b lg:border-b-0 ${isEven ? "lg:order-2 lg:border-l" : "lg:border-r"} border-stone-300`}>
+                <img src={dest.img} alt={dest.title} className="w-full h-full object-cover grayscale-[15%]" />
               </div>
-            </div>
-          </section>
-        );
-      })}
+
+              {/* Content Side */}
+              <div className={`w-full lg:w-1/2 p-8 sm:p-14 flex flex-col justify-center ${isEven ? "lg:order-1" : ""}`}>
+                <span className="font-mono text-[10px] text-stone-500 uppercase tracking-widest mb-4 block border-b border-stone-200 pb-2">
+                  [ INDEX N°0{idx + 1} ] — {dest.tag}
+                </span>
+                <h2 className={`${playfair.className} text-4xl sm:text-6xl font-black italic text-stone-900 mb-6 leading-none tracking-tight`}>
+                  {dest.title}
+                </h2>
+                <p className="text-stone-600 text-sm sm:text-base font-light mb-10 leading-relaxed">
+                  {dest.desc}
+                </p>
+                <button onClick={() => onSelectDestination(dest)} className="inline-flex items-center justify-between bg-transparent hover:bg-stone-100 text-stone-900 px-6 py-4 border border-stone-900 font-mono text-xs uppercase tracking-widest transition-colors cursor-pointer w-full sm:w-auto">
+                  <span>Eksplorasi Detail</span>
+                  <ArrowUpRight className="w-4 h-4" />
+                </button>
+              </div>
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

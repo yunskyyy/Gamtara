@@ -12,19 +12,12 @@ export default function Home() {
   const [selectedDest, setSelectedDest] = React.useState<DestinationData | null>(null);
 
   return (
-    <main className="min-h-screen bg-[#f4f2eb] text-stone-900 selection:bg-emerald-800 selection:text-stone-100">
+    <main className="min-h-screen bg-[#f4f2eb] text-stone-900 selection:bg-stone-900 selection:text-[#f4f2eb]">
       <Navbar />
       <HeroSection />
       <ToolsCarousel3D />
-      
-      {/* Destination Sections - Human Editorial Magazine Style */}
       <DestinationSections onSelectDestination={(dest) => setSelectedDest(dest)} />
-
-      {/* Modal Detail & Guide Recommendation */}
-      <DestinationDetailModal 
-        destination={selectedDest} 
-        onClose={() => setSelectedDest(null)} 
-      />
+      <DestinationDetailModal destination={selectedDest} onClose={() => setSelectedDest(null)} />
     </main>
   );
 }

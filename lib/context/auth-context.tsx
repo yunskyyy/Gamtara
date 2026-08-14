@@ -9,15 +9,15 @@ export interface UserProfile {
   name: string;
   email: string;
   phone: string;
-  origin: string; // Asal
-  address: string; // Alamat
+  origin: string;
+  address: string;
   gender: "Laki-laki" | "Perempuan";
   role: UserRole;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
-  login: (email: string) => boolean;
+  login: (email: string, targetRole?: UserRole) => boolean;
   register: (profile: Omit<UserProfile, "id">) => void;
   logout: () => void;
 }
@@ -27,13 +27,21 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([
-    { id: "ADM-1", name: "SuperAdmin Gamtara", email: "admin@gamtara.com", phone: "081234567890", origin: "Ternate", address: "Kantor Pusat Gamtara", gender: "Laki-laki", role: "admin" }
+    { id: "ADM-1", name: "SuperAdmin Gamtara", email: "admin@gamtara.com", phone: "081234567890", origin: "Ternate", address: "Kantor Pusat", gender: "Laki-laki", role: "admin" },
+    { id: "CUS-1", name: "Wisatawan Subur", email: "wisatawan@gamtara.com", phone: "081111111111", origin: "Jakarta", address: "Hotel Ternate", gender: "Laki-laki", role: "customer" },
+    { id: "VEN-1", name: "Toko Gamalama", email: "pemilik@gamtara.com", phone: "082222222222", origin: "Ternate", address: "Jl. Gamalama", gender: "Laki-laki", role: "pemilik" },
+    { id: "GUI-1", name: "Usman Gamalama", email: "pemandu@gamtara.com", phone: "083333333333", origin: "Ternate", address: "Jl. Gunung", gender: "Laki-laki", role: "pemandu" }
   ]);
 
-  const login = (email: string) => {
+  const login = (email: string, targetRole?: UserRole) => {
     const found = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
-      setUser(found);
+      // Jika targetRole dikirim (dari tombol demo), paksa ubah role-nya untuk keperluan demo
+      if (targetRole) {
+        setUser({ ...found, role: targetRole });
+      } else {
+        setUser(found);
+      }
       return true;
     }
     return false;

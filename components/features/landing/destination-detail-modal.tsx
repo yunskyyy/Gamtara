@@ -4,7 +4,10 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, MapPin, Check } from "lucide-react";
 import { useBooking } from "@/lib/context/booking-context";
+import { useAuth } from "@/lib/context/auth-context";
 import { DestinationData } from "@/lib/data/mock-tourism-data";
+import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
+import { AuthModal } from "@/components/features/auth/auth-modal";
 
 export type { DestinationData };
 
@@ -14,14 +17,33 @@ interface ModalProps {
 }
 
 export function DestinationDetailModal({ destination, onClose }: ModalProps) {
+  const { user } = useAuth();
   const { selectedTools, selectedGuide, toggleTool, selectGuide } = useBooking();
+  const [isPromptOpen, setIsPromptOpen] = React.useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
   if (!destination) return null;
 
+  const handleSelectTool = (tool: any) => {
+    if (!user) { setIsPromptOpen(true); return; }
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, img: tool.img });
+  };
+
+  const handleSelectGuide = (guide: any) => {
+    if (!user) { setIsPromptOpen(true); return; }
+    selectGuide({ id: guide.id, name: guide.name, price: guide.price, avatar: guide.avatar });
+  };
+
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto">
+    <AnimatePresence mode="wait">
+      <div key={`modal-backdrop-${destination.id}`} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+        <motion.div 
+          key={`modal-container-${destination.id}`}
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          exit={{ opacity: 0, y: 20 }} 
+          className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto"
+        >
           <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-sm bg-stone-900 text-white hover:bg-[#1d3a28] transition-colors cursor-pointer border border-stone-800">
             <X className="w-4 h-4" />
           </button>
@@ -43,17 +65,17 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                 <ShieldCheck className="w-4 h-4 text-[#1d3a28]" /> // ALAT SEWA DISARANKAN
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(destination.suggestedTools || []).map((tool) => {
+                {(destination.suggestedTools || []).map((tool, idx) => {
                   const isSelected = selectedTools.some((t) => t.id === tool.id);
                   const price = tool.price ?? 0;
                   return (
-                    <div key={tool.id} className={`flex items-center gap-4 p-3 rounded-sm border transition-all ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
+                    <div key={`modal-tool-${tool.id}-${idx}`} className={`flex items-center gap-4 p-3 rounded-sm border transition-all ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
                       <img src={tool.img} alt={tool.name} className="w-14 h-14 rounded-sm object-cover border border-stone-300" />
                       <div className="flex-1">
                         <h4 className="font-bold text-sm text-stone-900">{tool.name}</h4>
                         <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {price.toLocaleString("id-ID")} / hari</p>
                       </div>
-                      <button onClick={() => toggleTool({ id: tool.id, name: tool.name, price: price, img: tool.img })} className={`px-3.5 py-1.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-stone-900 text-white hover:bg-[#1d3a28] border-stone-900"}`}>
+                      <button onClick={() => handleSelectTool(tool)} className={`px-3.5 py-1.5 rounded-sm font-mono text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-stone-900 text-white hover:bg-[#1d3a28] border-stone-900"}`}>
                         {isSelected ? <Check className="w-4 h-4" /> : "Pilih"}
                       </button>
                     </div>
@@ -67,13 +89,13 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                 <MapPin className="w-4 h-4 text-[#1d3a28]" /> // TOUR GUIDE LOKAL TERDAFTAR
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(destination.guides || []).map((guide) => {
+                {(destination.guides || []).map((guide, idx) => {
                   const isSelected = selectedGuide?.id === guide.id;
                   const isAvailable = guide.status === "available" || guide.status === "Tersedia";
                   const guidePrice = guide.price ?? 150000;
 
                   return (
-                    <div key={guide.id} onClick={() => isAvailable && selectGuide({ id: guide.id, name: guide.name, price: guidePrice, avatar: guide.avatar })} className={`flex items-center justify-between p-4 rounded-sm border transition-all ${!isAvailable ? "opacity-50 cursor-not-allowed bg-stone-200/50 border-stone-300" : "cursor-pointer hover:border-[#1d3a28]"} ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
+                    <div key={`modal-guide-${guide.id}-${idx}`} onClick={() => isAvailable && handleSelectGuide(guide)} className={`flex items-center justify-between p-4 rounded-sm border transition-all ${!isAvailable ? "opacity-50 cursor-not-allowed bg-stone-200/50 border-stone-300" : "cursor-pointer hover:border-[#1d3a28]"} ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
                       <div className="flex items-center gap-3">
                         <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-full object-cover border border-stone-300" />
                         <div>
@@ -93,6 +115,9 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
           </div>
         </motion.div>
       </div>
+
+      <AuthPromptModal key="auth-prompt-modal-guard" isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="memilih layanan" />
+      <AuthModal key="auth-modal-guard" isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </AnimatePresence>
   );
 }
