@@ -14,7 +14,7 @@ export async function fetchRealTools() {
     .select("*, vendors(business_name, location, lat, lng)");
   
   if (error || !data || data.length === 0) return null;
-  return data.map((t) => ({
+  return data.map((t: Record<string, any>) => ({
     id: t.id,
     name: t.name,
     desc: t.description || "",
@@ -39,7 +39,7 @@ export async function fetchRealGuides() {
   const supabase = getClient();
   const { data, error } = await supabase.from("guide_profiles").select("*");
   if (error || !data || data.length === 0) return null;
-  return data.map((g) => ({
+  return data.map((g: Record<string, any>) => ({
     id: g.id,
     name: g.full_name,
     desc: `Pemandu spesialis area ${g.specialty_spots?.join(", ")}.`,
