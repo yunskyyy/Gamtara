@@ -34,14 +34,19 @@ export default function GuidesCatalogPage() {
 
   const handleConfirmRequest = () => {
     if (!requestTargetGuide || !chosenSpot) return;
-    createGuideRequest({ id: requestTargetGuide.id, name: requestTargetGuide.name, price: requestTargetGuide.price, avatar: requestTargetGuide.avatar }, chosenSpot);
+    createGuideRequest(
+      { id: requestTargetGuide.id, name: requestTargetGuide.name, price: requestTargetGuide.price, avatar: requestTargetGuide.avatar },
+      chosenSpot,
+      user?.name || "Wisatawan",
+      "15 Juni 2025"
+    );
     setRequestTargetGuide(null);
     setChosenSpot("");
     setIsHistoryOpen(true);
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900">
+    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
       <Navbar />
       <FloatingCartBar />
 
@@ -67,7 +72,7 @@ export default function GuidesCatalogPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {filtered.map((guide) => {
-            const isAvailable = guide.status === "Tersedia";
+            const isAvailable = guide.status === "Tersedia" || guide.status === "available";
             const activeReq = guideRequests.find((r) => r.guideId === guide.id);
 
             return (
@@ -107,7 +112,6 @@ export default function GuidesCatalogPage() {
         </div>
       </div>
 
-      {/* Modals */}
       {requestTargetGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/90 backdrop-blur-sm">
           <div className="bg-[#f4f2eb] p-8 max-w-md w-full border border-stone-300 shadow-2xl space-y-6 rounded-sm">
@@ -148,10 +152,10 @@ export default function GuidesCatalogPage() {
                       <p className="font-extrabold text-stone-900 text-base mb-0.5">{req.guideName}</p>
                       <p className="text-xs text-stone-500 font-mono mb-2">Destinasi: {req.selectedDestination}</p>
                       <span className="inline-block px-2.5 py-1 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold uppercase tracking-wider border border-amber-200 rounded-sm">
-                        {req.status === "menunggu_konfirmasi" ? "Menunggu Konfirmasi" : "Disetujui"}
+                        {req.status === "MENUNGGU" ? "Menunggu Konfirmasi" : req.status}
                       </span>
                     </div>
-                    {req.status === "menunggu_konfirmasi" && (
+                    {req.status === "MENUNGGU" && (
                       <button onClick={() => cancelGuideRequest(req.id)} className="px-4 py-2 bg-transparent border border-rose-600 text-rose-600 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors rounded-sm">
                         Batalkan
                       </button>

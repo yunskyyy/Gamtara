@@ -13,6 +13,7 @@ export interface ToolOrderItem {
 export interface StoreOrderGroup {
   orderId: string;
   ownerName: string;
+  clientName: string;
   items: ToolOrderItem[];
   totalPrice: number;
   startDate: string;
@@ -36,7 +37,7 @@ export interface GuideRequest {
 
 export interface ChatMessage {
   id: string;
-  requestId: string;
+  orderOrRequestId: string;
   sender: string;
   text: string;
   time: string;
@@ -51,8 +52,8 @@ interface BookingContextType {
   createGuideRequest: (guide: { id: string; name: string; price: number; avatar: string }, destination: string, clientName: string, tourDate: string) => void;
   updateGuideStatus: (requestId: string, status: "DISETUJUI" | "DITOLAK" | "LUNAS") => void;
   cancelGuideRequest: (requestId: string) => void;
-  completeCheckout: (startDate: string, endDate: string) => void;
-  sendChatMessage: (requestId: string, sender: string, text: string) => void;
+  completeCheckout: (startDate: string, endDate: string, clientName: string) => void;
+  sendChatMessage: (orderOrRequestId: string, sender: string, text: string) => void;
   clearBooking: () => void;
   totalPrice: number;
 }
@@ -65,6 +66,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     {
       orderId: "ORD-TOKO-7890",
       ownerName: "Toko Gamalama Outdoor",
+      clientName: "Wisatawan Subur",
       items: [{ id: "t1", name: "Tenda Dome 4P", price: 50000, ownerName: "Toko Gamalama Outdoor", img: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop" }],
       totalPrice: 50000,
       startDate: "2025-06-15",
@@ -78,7 +80,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   ]);
 
   const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([
-    { id: "m1", requestId: "REQ-901", sender: "Fikri Subur", text: "Halo Klien! Pembayaran telah lunas. Sampai jumpa di titik kumpul Pantai Sulamadaha!", time: "09:00" }
+    { id: "m1", orderOrRequestId: "REQ-901", sender: "Fikri Subur", text: "Halo Klien! Pembayaran telah lunas. Sampai jumpa di titik kumpul!", time: "09:00" },
+    { id: "m2", orderOrRequestId: "ORD-TOKO-7890", sender: "Toko Gamalama Outdoor", text: "Halo Penyewa! Alat tenda Anda sudah siap diambil di toko.", time: "09:30" }
   ]);
 
   const toggleTool = (tool: ToolOrderItem) => {
@@ -90,9 +93,9 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       id: `REQ-${Date.now().toString().slice(-4)}`,
       guideId: guide.id,
       guideName: guide.name,
-      clientName,
+      clientName: clientName || "Wisatawan",
       selectedDestination: destination,
-      tourDate,
+      tourDate: tourDate || "15 Juni 2025",
       price: guide.price,
       avatar: guide.avatar,
       status: "MENUNGGU",
@@ -108,7 +111,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setGuideRequests((prev) => prev.filter((r) => r.id !== requestId));
   };
 
-  const completeCheckout = (startDate: string, endDate: string) => {
+  const completeCheckout = (startDate: string, endDate: string, clientName: string) => {
     const grouped = selectedTools.reduce((acc, item) => {
       acc[item.ownerName] = acc[item.ownerName] || [];
       acc[item.ownerName].push(item);
@@ -118,6 +121,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     const newOrders: StoreOrderGroup[] = Object.entries(grouped).map(([ownerName, items], idx) => ({
       orderId: `ORD-${Date.now().toString().slice(-4)}-${idx + 1}`,
       ownerName,
+      clientName: clientName || "Wisatawan",
       items,
       totalPrice: items.reduce((sum, i) => sum + i.price, 0),
       startDate,
@@ -129,10 +133,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedTools([]);
   };
 
-  const sendChatMessage = (requestId: string, sender: string, text: string) => {
+  const sendChatMessage = (orderOrRequestId: string, sender: string, text: string) => {
     const newMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
-      requestId,
+      orderOrRequestId,
       sender,
       text,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -141,7 +145,6 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearBooking = () => setSelectedTools([]);
-
   const totalPrice = React.useMemo(() => selectedTools.reduce((acc, item) => acc + item.price, 0), [selectedTools]);
 
   return (

@@ -18,7 +18,7 @@ interface ModalProps {
 
 export function DestinationDetailModal({ destination, onClose }: ModalProps) {
   const { user } = useAuth();
-  const { selectedTools, selectedGuide, toggleTool, selectGuide } = useBooking();
+  const { selectedTools, toggleTool, createGuideRequest } = useBooking();
   const [isPromptOpen, setIsPromptOpen] = React.useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
@@ -26,12 +26,18 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
 
   const handleSelectTool = (tool: any) => {
     if (!user) { setIsPromptOpen(true); return; }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, img: tool.img });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName || tool.vendorName || "Toko Gamalama Outdoor", img: tool.img });
   };
 
-  const handleSelectGuide = (guide: any) => {
+  const handleRequestGuide = (guide: any) => {
     if (!user) { setIsPromptOpen(true); return; }
-    selectGuide({ id: guide.id, name: guide.name, price: guide.price, avatar: guide.avatar });
+    createGuideRequest(
+      { id: guide.id, name: guide.name, price: guide.price, avatar: guide.avatar },
+      destination.title,
+      user.name,
+      "15 Juni 2025"
+    );
+    alert(`Permintaan dampingan ke ${guide.name} berhasil dikirim!`);
   };
 
   return (
@@ -39,9 +45,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
       <div key={`modal-backdrop-${destination.id}`} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
         <motion.div 
           key={`modal-container-${destination.id}`}
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          exit={{ opacity: 0, y: 20 }} 
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} 
           className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto"
         >
           <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-sm bg-stone-900 text-white hover:bg-[#1d3a28] transition-colors cursor-pointer border border-stone-800">
@@ -86,16 +90,15 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
 
             <div>
               <h3 className="text-xs font-mono font-bold tracking-widest uppercase mb-4 flex items-center gap-2 text-stone-800">
-                <MapPin className="w-4 h-4 text-[#1d3a28]" /> // TOUR GUIDE LOKAL TERDAFTAR
+                <MapPin className="w-4 h-4 text-[#1d3a28]" /> // PEMANDU WISATA LOKAL TERDAFTAR
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(destination.guides || []).map((guide, idx) => {
-                  const isSelected = selectedGuide?.id === guide.id;
                   const isAvailable = guide.status === "available" || guide.status === "Tersedia";
                   const guidePrice = guide.price ?? 150000;
 
                   return (
-                    <div key={`modal-guide-${guide.id}-${idx}`} onClick={() => isAvailable && handleSelectGuide(guide)} className={`flex items-center justify-between p-4 rounded-sm border transition-all ${!isAvailable ? "opacity-50 cursor-not-allowed bg-stone-200/50 border-stone-300" : "cursor-pointer hover:border-[#1d3a28]"} ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
+                    <div key={`modal-guide-${guide.id}-${idx}`} className="flex items-center justify-between p-4 rounded-sm border bg-white border-stone-300">
                       <div className="flex items-center gap-3">
                         <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-full object-cover border border-stone-300" />
                         <div>
@@ -104,9 +107,9 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                           <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {guidePrice.toLocaleString("id-ID")} / hari</p>
                         </div>
                       </div>
-                      <span className={`px-2.5 py-1 rounded-sm text-[10px] font-mono uppercase tracking-wider font-bold border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-[#1d3a28]/10 text-[#1d3a28] border-[#1d3a28]/20"}`}>
-                        {isSelected ? "Dipilih" : "Tersedia"}
-                      </span>
+                      <button disabled={!isAvailable} onClick={() => handleRequestGuide(guide)} className={`px-3 py-1.5 rounded-sm text-[10px] font-mono uppercase tracking-wider font-bold border ${!isAvailable ? "bg-stone-200 text-stone-500 border-stone-300 cursor-not-allowed" : "bg-[#1d3a28] text-white border-[#1d3a28] cursor-pointer"}`}>
+                        {!isAvailable ? "Sibuk" : "Kirim Permintaan"}
+                      </button>
                     </div>
                   );
                 })}
