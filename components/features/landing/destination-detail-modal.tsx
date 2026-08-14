@@ -4,16 +4,7 @@ import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, MapPin, Check } from "lucide-react";
 import { useBooking } from "@/lib/context/booking-context";
-
-export interface DestinationData {
-  id: string;
-  title: string;
-  tag: string;
-  desc: string;
-  img: string;
-  suggestedTools: { id: string; name: string; price: number; img: string }[];
-  guides: { id: string; name: string; lang: string; status: "available" | "busy"; avatar: string; price: number }[];
-}
+import { DestinationData } from "@/lib/data/mock-tourism-data";
 
 interface ModalProps {
   destination: DestinationData | null;
@@ -76,7 +67,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {(destination.guides || []).map((guide) => {
                   const isSelected = selectedGuide?.id === guide.id;
-                  const isAvailable = guide.status === "available";
+                  const isAvailable = guide.status === "available" || guide.status === "Tersedia";
                   const guidePrice = guide.price ?? 150000;
 
                   return (
