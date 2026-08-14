@@ -6,6 +6,8 @@ import { X, ShieldCheck, MapPin, Check } from "lucide-react";
 import { useBooking } from "@/lib/context/booking-context";
 import { DestinationData } from "@/lib/data/mock-tourism-data";
 
+export type { DestinationData };
+
 interface ModalProps {
   destination: DestinationData | null;
   onClose: () => void;
