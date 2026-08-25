@@ -12,6 +12,9 @@ interface SectionsProps {
 }
 
 export function DestinationSections({ onSelectDestination }: SectionsProps) {
+  // FIX: Panggil hook useTourism untuk mendapatkan data destinations
+  const { destinations } = useTourism();
+
   return (
     <div className="w-full bg-[#f4f2eb] py-20 px-4 sm:px-10">
       <div className="max-w-7xl mx-auto space-y-20">
@@ -20,12 +23,10 @@ export function DestinationSections({ onSelectDestination }: SectionsProps) {
 
           return (
             <section key={dest.id} className="w-full border border-stone-300 bg-white flex flex-col lg:flex-row">
-              {/* Image Side (Flat, Sharp) */}
               <div className={`w-full lg:w-1/2 h-[400px] lg:h-[500px] border-b lg:border-b-0 ${isEven ? "lg:order-2 lg:border-l" : "lg:border-r"} border-stone-300`}>
                 <img src={dest.img} alt={dest.title} className="w-full h-full object-cover grayscale-[15%]" />
               </div>
 
-              {/* Content Side */}
               <div className={`w-full lg:w-1/2 p-8 sm:p-14 flex flex-col justify-center ${isEven ? "lg:order-1" : ""}`}>
                 <span className="font-mono text-[10px] text-stone-500 uppercase tracking-widest mb-4 block border-b border-stone-200 pb-2">
                   [ INDEX N°0{idx + 1} ] — {dest.tag}
