@@ -4,10 +4,12 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useBooking } from "@/lib/context/booking-context";
+import { useAuth } from "@/lib/context/auth-context";
 import { QrCode, CheckCircle2, Calendar, MapPin } from "lucide-react";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { selectedTools, totalPrice, completeCheckout } = useBooking();
   const [startDate, setStartDate] = React.useState("2025-06-15");
   const [endDate, setEndDate] = React.useState("2025-06-17");
@@ -18,7 +20,7 @@ export default function CheckoutPage() {
   const handleSimulatePayment = () => {
     setIsPaid(true);
     setTimeout(() => {
-      completeCheckout(startDate, endDate);
+      completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur");
       router.push("/ticket/TRX-GAMTARA-7890");
     }, 1500);
   };
@@ -30,7 +32,7 @@ export default function CheckoutPage() {
         <div className="max-w-md mx-auto bg-white p-8 border border-stone-300 rounded-sm mt-12 space-y-4">
           <p className="font-mono text-xs text-stone-500">// KERANJANG ALAT KOSONG</p>
           <h2 className="text-xl font-bold">Belum Ada Alat Dipilih</h2>
-          <button onClick={() => router.push("/tools")} className="bg-[#1d3a28] text-white px-6 py-2.5 rounded-sm font-mono text-xs uppercase font-bold">Pilih Peralatan</button>
+          <button onClick={() => router.push("/tools")} className="bg-[#1d3a28] text-white px-6 py-2.5 rounded-sm font-mono text-xs uppercase font-bold cursor-pointer">Pilih Peralatan</button>
         </div>
       </main>
     );
@@ -68,7 +70,7 @@ export default function CheckoutPage() {
                 <MapPin className="w-4 h-4 text-[#1d3a28]" /> Titik Jemput / Pickup Point
               </h3>
               <input type="text" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full p-3 bg-[#f4f2eb] border border-stone-300 rounded-sm text-xs font-sans" />
-              <p className="text-[11px] text-stone-500">Alat dapat diambil langsung di toko pemilik atau diantar ke titik temu yang disepakati.</p>
+              <p className="text-[11px] text-stone-500">Alat dapat diambil langsung di toko pemilik atau diantar ke titik temu.</p>
             </div>
           </div>
 
