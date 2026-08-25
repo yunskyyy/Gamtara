@@ -29,9 +29,10 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
   const handleSelectTool = (tool: ToolItem) => {
     if (!user) { setIsPromptOpen(true); return; }
     if (!isCustomer) { alert("Hanya wisatawan (Penyewa) yang dapat menyewa alat."); return; }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName || "Mitra", img: tool.img });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName || "Mitra Vendor", img: tool.img });
   };
 
+  // FUNGSI INI YANG SEBELUMNYA HILANG DAN MEMBUAT GAGAL BUILD
   const handleRequestGuide = (guide: GuideItem) => {
     if (!user) { setIsPromptOpen(true); return; }
     if (!isCustomer) { alert("Hanya wisatawan (Klien) yang dapat meminta pemandu."); return; }
@@ -46,9 +47,9 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
 
   return (
     <AnimatePresence mode="wait">
-      <div key={`modal-backdrop-${destination.id}`} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
-        <motion.div key={`modal-container-${destination.id}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto">
-          <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-sm bg-stone-900 text-white hover:bg-[#1d3a28] cursor-pointer">
+      <div key={`modal-bg-${destination.id}`} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+        <motion.div key={`modal-box-${destination.id}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto">
+          <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-sm bg-stone-900 text-white hover:bg-[#1d3a28] transition-colors cursor-pointer border border-stone-800">
             <X className="w-4 h-4" />
           </button>
 
@@ -56,7 +57,9 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
             <img src={destination.img} alt={destination.title} className="w-full h-full object-cover opacity-90" />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/30 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 text-white">
-              <span className="font-mono text-[11px] px-3 py-1 rounded-sm bg-[#1d3a28] text-stone-100 uppercase tracking-widest mb-2 inline-block">{destination.tag}</span>
+              <span className="font-mono text-[11px] px-3 py-1 rounded-sm bg-[#1d3a28] text-stone-100 uppercase tracking-widest mb-2 inline-block">
+                {destination.tag}
+              </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold">{destination.title}</h2>
             </div>
           </div>
@@ -68,11 +71,11 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                 {(destination.suggestedTools || []).map((tool, idx) => {
                   const isSelected = selectedTools.some((t) => t.id === tool.id);
                   return (
-                    <div key={`modal-tool-${tool.id}-${idx}`} className={`flex items-center gap-4 p-3 rounded-sm border ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
+                    <div key={`modal-tool-${tool.id}-${idx}`} className={`flex items-center gap-4 p-3 rounded-sm border transition-all ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
                       <img src={tool.img} alt={tool.name} className="w-14 h-14 rounded-sm object-cover border border-stone-300" />
                       <div className="flex-1">
                         <h4 className="font-bold text-sm text-stone-900">{tool.name}</h4>
-                        <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {tool.price.toLocaleString("id-ID")} / hari</p>
+                        <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {(tool.price ?? 0).toLocaleString("id-ID")} / hari</p>
                       </div>
                       {(!user || isCustomer) && (
                         <button onClick={() => handleSelectTool(tool)} className={`px-3.5 py-1.5 rounded-sm font-mono text-xs uppercase font-bold cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-stone-900 text-white hover:bg-[#1d3a28] border-stone-900"}`}>
@@ -93,13 +96,13 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                   const isAvailable = guide.status === "available" || guide.status === "Tersedia";
 
                   return (
-                    <div key={`modal-guide-${guide.id}-${idx}`} className={`flex items-center justify-between p-4 rounded-sm border ${!isAvailable ? "opacity-50 bg-stone-200/50 border-stone-300" : "bg-white border-stone-300"}`}>
+                    <div key={`modal-guide-${guide.id}-${idx}`} className={`flex items-center justify-between p-4 rounded-sm border bg-white border-stone-300`}>
                       <div className="flex items-center gap-3">
                         <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-full object-cover border border-stone-300" />
                         <div>
                           <h4 className="font-bold text-sm text-stone-900">{guide.name}</h4>
                           <p className="text-stone-500 text-xs font-mono">{guide.lang}</p>
-                          <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {guide.price.toLocaleString("id-ID")} / hari</p>
+                          <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {(guide.price ?? 150000).toLocaleString("id-ID")} / hari</p>
                         </div>
                       </div>
                       {(!user || isCustomer) && (
@@ -120,7 +123,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
         </motion.div>
       </div>
 
-      <AuthPromptModal key="auth-prompt-modal-guard" isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="memilih layanan" />
+      <AuthPromptModal key="auth-prompt-guard" isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="memilih layanan" />
       <AuthModal key="auth-modal-guard" isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </AnimatePresence>
   );

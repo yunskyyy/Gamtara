@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/context/auth-context";
 import { MOCK_TOOLS, ToolItem } from "@/lib/data/mock-tourism-data";
 import { MediaPreviewModal, PreviewData } from "@/components/ui/media-preview-modal";
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
-import { AuthModal } from "@/components/features/auth/auth-modal";
 import { Search, CheckCircle2, Check, MapPin, Eye, Store } from "lucide-react";
 
 export default function ToolsCatalogPage() {
@@ -19,7 +18,6 @@ export default function ToolsCatalogPage() {
   const [search, setSearch] = React.useState("");
   const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
   const [isPromptOpen, setIsPromptOpen] = React.useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
   const ownerList = ["Semua Toko", ...Array.from(new Set(MOCK_TOOLS.map((t) => t.ownerName)))];
 
@@ -32,7 +30,7 @@ export default function ToolsCatalogPage() {
 
   const handleSelectTool = (tool: ToolItem) => {
     if (!user) { setIsPromptOpen(true); return; }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, img: tool.img });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName, img: tool.img });
   };
 
   return (
@@ -63,9 +61,7 @@ export default function ToolsCatalogPage() {
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto text-xs">
-            <span className="font-mono font-bold text-stone-600 shrink-0 flex items-center gap-1">
-              <Store className="w-3.5 h-3.5 text-[#1d3a28]" /> Toko Pemilik:
-            </span>
+            <span className="font-mono font-bold text-stone-600 shrink-0 flex items-center gap-1"><Store className="w-3.5 h-3.5 text-[#1d3a28]" /> Toko Pemilik:</span>
             {ownerList.map((owner) => (
               <button key={owner} onClick={() => setSelectedOwner(owner)} className={`px-3 py-1 rounded-sm text-[11px] font-medium transition-colors cursor-pointer border shrink-0 ${selectedOwner === owner ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-600 border-stone-200"}`}>
                 {owner}
@@ -80,13 +76,13 @@ export default function ToolsCatalogPage() {
 
             return (
               <div key={tool.id} className="bg-white border border-stone-300 rounded-sm p-5 shadow-sm hover:shadow-md transition-shadow text-center group">
-                <div onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, categoryOrLang: tool.category, rating: tool.rating })} className="relative w-28 h-28 rounded-sm overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
+                <div onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, ownerName: tool.ownerName, categoryOrLang: tool.category, rating: tool.rating })} className="relative w-28 h-28 rounded-xl overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
                   <img src={tool.img} alt={tool.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                   <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
                 </div>
 
-                <h3 onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, categoryOrLang: tool.category, rating: tool.rating })} className="font-bold text-stone-900 text-lg mb-0.5 cursor-pointer hover:text-[#1d3a28]">{tool.name}</h3>
-                <p className="text-[#c5922e] text-xs font-bold mb-2 flex items-center justify-center gap-1"><MapPin className="w-3.5 h-3.5" /> Penyedia: {tool.vendorName} ({tool.loc})</p>
+                <h3 onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, ownerName: tool.ownerName, categoryOrLang: tool.category, rating: tool.rating })} className="font-bold text-stone-900 text-lg mb-0.5 cursor-pointer hover:text-[#1d3a28]">{tool.name}</h3>
+                <p className="text-[#c5922e] text-xs font-bold mb-2 flex items-center justify-center gap-1"><MapPin className="w-3.5 h-3.5" /> Penyedia: {tool.ownerName} ({tool.loc})</p>
                 <p className="text-[#1d3a28] font-bold text-sm mb-4">Rp {tool.price.toLocaleString("id-ID")} <span className="text-stone-500 font-normal">/ hari</span></p>
 
                 <div className="pt-3 border-t border-stone-200 flex items-center justify-between text-xs text-stone-600 mb-4 font-sans">
@@ -104,8 +100,7 @@ export default function ToolsCatalogPage() {
       </div>
 
       <MediaPreviewModal data={previewData} onClose={() => setPreviewData(null)} />
-      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="menyewa peralatan outdoor" />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => {}} actionText="menyewa peralatan outdoor" />
     </main>
   );
 }

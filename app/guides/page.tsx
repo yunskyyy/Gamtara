@@ -8,7 +8,6 @@ import { useAuth } from "@/lib/context/auth-context";
 import { MOCK_GUIDES, GuideItem } from "@/lib/data/mock-tourism-data";
 import { MediaPreviewModal, PreviewData } from "@/components/ui/media-preview-modal";
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
-import { AuthModal } from "@/components/features/auth/auth-modal";
 import { CheckCircle2, Clock, MapPin, Send, Eye, X, ListOrdered } from "lucide-react";
 
 const specialtySpots = ["Semua Tempat", "Pantai Sulamadaha", "Gunung Gamalama", "Pulau Maitara", "Benteng Tolukko", "Batu Angus", "Danau Ngade"];
@@ -22,7 +21,6 @@ export default function GuidesCatalogPage() {
   const [chosenSpot, setChosenSpot] = React.useState<string>("");
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isPromptOpen, setIsPromptOpen] = React.useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
   const filtered = MOCK_GUIDES.filter((g) => selectedSpot === "Semua Tempat" || g.specialtySpots.includes(selectedSpot));
 
@@ -102,7 +100,7 @@ export default function GuidesCatalogPage() {
                     PERMINTAAN DIKIRIM
                   </button>
                 ) : (
-                  <button disabled={!isAvailable} onClick={() => handleOpenRequest(guide)} className={`w-full py-2.5 rounded-sm text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 ${!isAvailable ? "bg-stone-300 text-stone-500 cursor-not-allowed" : "bg-stone-900 text-white hover:bg-[#1d3a28]"}`}>
+                  <button disabled={!isAvailable} onClick={() => handleOpenRequest(guide)} className={`w-full py-2.5 rounded-sm text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 border ${!isAvailable ? "bg-stone-100 text-stone-400 border-stone-200 cursor-not-allowed" : "bg-white text-stone-900 border-stone-900 hover:bg-stone-100 hover:text-stone-900"}`}>
                     {!isAvailable ? "TIDAK TERSEDIA" : <><Send className="w-3.5 h-3.5" /> KIRIM PERMINTAAN</>}
                   </button>
                 )}
@@ -155,6 +153,7 @@ export default function GuidesCatalogPage() {
                         {req.status === "MENUNGGU" ? "Menunggu Konfirmasi" : req.status}
                       </span>
                     </div>
+                    {/* HANYA MUNCUL JIKA STATUS 'MENUNGGU' */}
                     {req.status === "MENUNGGU" && (
                       <button onClick={() => cancelGuideRequest(req.id)} className="px-4 py-2 bg-transparent border border-rose-600 text-rose-600 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors rounded-sm">
                         Batalkan
@@ -169,8 +168,7 @@ export default function GuidesCatalogPage() {
       )}
 
       <MediaPreviewModal data={previewData} onClose={() => setPreviewData(null)} />
-      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => setIsAuthModalOpen(true)} actionText="meminta pemandu wisata" />
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => {}} actionText="meminta pemandu wisata" />
     </main>
   );
 }
