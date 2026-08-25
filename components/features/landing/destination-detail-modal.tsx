@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, MapPin, Check, Send } from "lucide-react";
 import { useBooking } from "@/lib/context/booking-context";
 import { useAuth } from "@/lib/context/auth-context";
-import { DestinationData, ToolItem, GuideItem } from "@/lib/data/mock-tourism-data";
+import { DestinationData, ToolItem, GuideItem } from "@/lib/context/tourism-context";
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
 import { AuthModal } from "@/components/features/auth/auth-modal";
 

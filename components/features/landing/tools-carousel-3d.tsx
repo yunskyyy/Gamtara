@@ -4,7 +4,7 @@ import * as React from "react";
 import { motion, PanInfo } from "framer-motion";
 import { MapPin, ShoppingBag, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Playfair_Display } from "next/font/google";
-import { MOCK_TOOLS, ToolItem } from "@/lib/data/mock-tourism-data";
+import { useTourism, ToolItem } from "@/lib/context/tourism-context";
 import { useBooking } from "@/lib/context/booking-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
@@ -19,7 +19,7 @@ export function ToolsCarousel3D() {
   const [isPromptOpen, setIsPromptOpen] = React.useState(false);
   
   const touchStartRef = React.useRef<number | null>(null);
-  const total = MOCK_TOOLS.length;
+  const { tools } = useTourism(); const total = tools.length;
 
   React.useEffect(() => {
     if (isHovered) return;
@@ -72,7 +72,7 @@ export function ToolsCarousel3D() {
         onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}
         className="relative z-10 w-full max-w-6xl h-[440px] flex items-center justify-center perspective-[1000px] cursor-grab active:cursor-grabbing touch-pan-y"
       >
-        {MOCK_TOOLS.map((item, index) => {
+        {tools.map((item, index) => {
           let rawOffset = index - progress;
           let offset = ((rawOffset % total) + total) % total;
           if (offset > total / 2) offset -= total;

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Playfair_Display } from "next/font/google";
-import { MOCK_DESTINATIONS, DestinationData } from "@/lib/data/mock-tourism-data";
+import { useTourism, DestinationData } from "@/lib/context/tourism-context";
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["900"], style: ["normal", "italic"] });
 
@@ -15,7 +15,7 @@ export function DestinationSections({ onSelectDestination }: SectionsProps) {
   return (
     <div className="w-full bg-[#f4f2eb] py-20 px-4 sm:px-10">
       <div className="max-w-7xl mx-auto space-y-20">
-        {MOCK_DESTINATIONS.map((dest, idx) => {
+        {destinations.map((dest, idx) => {
           const isEven = idx % 2 === 1;
 
           return (

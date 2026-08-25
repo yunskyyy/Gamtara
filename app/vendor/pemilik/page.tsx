@@ -6,7 +6,7 @@ import { Navbar } from "@/components/features/landing/navbar";
 import { useBooking } from "@/lib/context/booking-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { Camera, CheckCircle2, MessageSquare, Upload, Plus, Pencil, Trash2 } from "lucide-react";
-import { MOCK_TOOLS } from "@/lib/data/mock-tourism-data";
+import { useTourism } from "@/lib/context/tourism-context";
 
 export default function PemilikDashboardPage() {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ export default function PemilikDashboardPage() {
   const lunasOrders = myOrders.filter((o) => o.status === "LUNAS" || o.status === "DIGUNAKAN");
   
   // Simulasi Filter Katalog Alat milik toko ini
-  const myTools = MOCK_TOOLS.filter((t) => t.ownerName === user?.name);
+  const { tools } = useTourism(); const myTools = tools.filter((t) => t.ownerName === user?.name);
 
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">

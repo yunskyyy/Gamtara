@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/context/auth-context";
 import { BookingProvider } from "@/lib/context/booking-context";
+import { TourismProvider } from "@/lib/context/tourism-context";
 import { FloatingCartBar } from "@/components/ui/floating-cart-bar";
 import { SplashScreen } from "@/components/ui/splash-screen";
 
@@ -19,10 +20,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${jakarta.className} antialiased selection:bg-[#1d3a28] selection:text-white`}>
         <AuthProvider>
           <SplashScreen />
-          <BookingProvider>
-            {children}
-            <FloatingCartBar />
-          </BookingProvider>
+          <TourismProvider>
+            <BookingProvider>
+              {children}
+              <FloatingCartBar />
+            </BookingProvider>
+          </TourismProvider>
         </AuthProvider>
       </body>
     </html>
