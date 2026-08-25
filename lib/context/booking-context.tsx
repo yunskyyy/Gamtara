@@ -39,45 +39,48 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [chatMessages, setChatMessages] = React.useState<ChatMessage[]>([]);
   const [disputes, setDisputes] = React.useState<DisputeItem[]>([]);
   const [payouts, setPayouts] = React.useState<PayoutItem[]>([]);
+  const [isLoaded, setIsLoaded] = React.useState(false);
 
-  const toggleTool = (tool: ToolOrderItem) => {
-    setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);
-  };
-
-  const createGuideRequest = (guide: { id: string; name: string; price: number; avatar: string }, destination: string, clientName: string, tourDate: string) => {
-    const newReq: GuideRequest = {
-      id: `REQ-${Date.now().toString().slice(-4)}`,
-      guideId: guide.id,
-      guideName: guide.name,
-      clientName: clientName || "Wisatawan",
-      selectedDestination: destination,
-      tourDate: tourDate || "15 Juni 2025",
-      price: guide.price,
-      avatar: guide.avatar,
-      status: "MENUNGGU",
-    };
-    setGuideRequests((prev) => [...prev, newReq]);
-  };
-
-  const updateGuideStatus = (requestId: string, status: "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI") => {
-    setGuideRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status } : r));
-    if (status === "SELESAI") {
-      const req = guideRequests.find((r) => r.id === requestId);
-      if (req) {
-        setPayouts((prev) => [...prev, { id: `PAY-${Date.now().toString().slice(-4)}`, partnerName: req.guideName, role: "Pemandu Wisata", amount: req.price, status: "SCHEDULED" }]);
+  // Load from LocalStorage
+  React.useEffect(() => {
+    const loadState = () => {
+      const db = localStorage.getItem("gamtara_db");
+      if (db) {
+        const parsed = JSON.parse(db);
+        setSelectedTools(parsed.selectedTools || []);
+        setStoreOrders(parsed.storeOrders || []);
+        setGuideRequests(parsed.guideRequests || []);
+        setChatMessages(parsed.chatMessages || []);
+        setDisputes(parsed.disputes || []);
+        setPayouts(parsed.payouts || []);
       }
+      setIsLoaded(true);
+    };
+
+    loadState();
+
+    // Auto Refresh Polling (Realtime Simulation Every 3 seconds)
+    const interval = setInterval(() => {
+      loadState();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Save to LocalStorage whenever state changes
+  React.useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("gamtara_db", JSON.stringify({
+        selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts
+      }));
     }
-  };
+  }, [selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts, isLoaded]);
 
-  const payGuideRequest = (requestId: string) => {
-    updateGuideStatus(requestId, "LUNAS");
-  };
-
-  const cancelGuideRequest = (requestId: string) => {
-    setGuideRequests((prev) => prev.filter((r) => r.id !== requestId));
-  };
+  const toggleTool = (tool: ToolOrderItem) => setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);
+  const clearBooking = () => setSelectedTools([]);
 
   const completeCheckout = (startDate: string, endDate: string, clientName: string) => {
+    // MULTI VENDOR GROUPING LOGIC
     const grouped = selectedTools.reduce((acc, item) => {
       acc[item.ownerName] = acc[item.ownerName] || [];
       acc[item.ownerName].push(item);
@@ -87,7 +90,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     const newOrders: StoreOrderGroup[] = Object.entries(grouped).map(([ownerName, items], idx) => ({
       orderId: `ORD-${Date.now().toString().slice(-4)}-${idx + 1}`,
       ownerName,
-      clientName: clientName || "Wisatawan",
+      clientName,
       items,
       totalPrice: items.reduce((sum, i) => sum + i.price, 0),
       startDate,
@@ -99,6 +102,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
     setSelectedTools([]);
   };
 
+  const createGuideRequest = (guide: { id: string; name: string; price: number; avatar: string }, destination: string, clientName: string, tourDate: string) => {
+    setGuideRequests((prev) => [...prev, { id: `REQ-${Date.now().toString().slice(-4)}`, guideId: guide.id, guideName: guide.name, clientName, selectedDestination: destination, tourDate, price: guide.price, avatar: guide.avatar, status: "MENUNGGU" }]);
+  };
+
+  const updateGuideStatus = (requestId: string, status: "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI") => setGuideRequests((prev) => prev.map((r) => r.id === requestId ? { ...r, status } : r));
+  const payGuideRequest = (requestId: string) => updateGuideStatus(requestId, "LUNAS");
+  const cancelGuideRequest = (requestId: string) => setGuideRequests((prev) => prev.filter((r) => r.id !== requestId));
+
   const updateStoreOrderStatus = (orderId: string, status: "DIGUNAKAN" | "SELESAI", photoBefore?: string, photoAfter?: string) => {
     setStoreOrders((prev) => prev.map((o) => {
       if (o.orderId === orderId) {
@@ -109,63 +120,25 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       }
       return o;
     }));
-
-    if (status === "SELESAI") {
-      const ord = storeOrders.find((o) => o.orderId === orderId);
-      if (ord) {
-        setPayouts((prev) => [...prev, { id: `PAY-${Date.now().toString().slice(-4)}`, partnerName: ord.ownerName, role: "Pemilik Barang", amount: ord.totalPrice, status: "SCHEDULED" }]);
-      }
-    }
   };
 
   const reportDamageDispute = (orderId: string, photoBefore: string, photoAfter: string, claimAmount: number) => {
     const ord = storeOrders.find((o) => o.orderId === orderId);
     if (!ord) return;
-
     setStoreOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: "SENGKETA" } : o));
-    setDisputes((prev) => [
-      ...prev,
-      {
-        id: `DISP-${Date.now().toString().slice(-4)}`,
-        orderId,
-        itemName: ord.items.map((i) => i.name).join(", "),
-        ownerName: ord.ownerName,
-        clientName: ord.clientName,
-        photoBefore: photoBefore || "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop",
-        photoAfter: photoAfter || "https://images.unsplash.com/photo-1504280390467-336c18bf2288?w=400&auto=format&fit=crop",
-        claimAmount,
-        status: "INVESTIGASI",
-      }
-    ]);
+    setDisputes((prev) => [...prev, { id: `DISP-${Date.now().toString().slice(-4)}`, orderId, itemName: ord.items.map((i) => i.name).join(", "), ownerName: ord.ownerName, clientName: ord.clientName, photoBefore, photoAfter, claimAmount, status: "INVESTIGASI" }]);
   };
 
-  const resolveDispute = (disputeId: string, action: "DISETUJUI" | "DITOLAK") => {
-    setDisputes((prev) => prev.map((d) => d.id === disputeId ? { ...d, status: action } : d));
-  };
+  const resolveDispute = (disputeId: string, action: "DISETUJUI" | "DITOLAK") => setDisputes((prev) => prev.map((d) => d.id === disputeId ? { ...d, status: action } : d));
 
   const sendChatMessage = (orderOrRequestId: string, sender: string, text: string) => {
-    const newMsg: ChatMessage = {
-      id: `msg-${Date.now()}`,
-      orderOrRequestId,
-      sender,
-      text,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    };
-    setChatMessages((prev) => [...prev, newMsg]);
+    setChatMessages((prev) => [...prev, { id: `msg-${Date.now()}`, orderOrRequestId, sender, text, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
   };
 
-  const clearBooking = () => setSelectedTools([]);
   const totalPrice = React.useMemo(() => selectedTools.reduce((acc, item) => acc + item.price, 0), [selectedTools]);
 
   return (
-    <BookingContext.Provider
-      value={{
-        selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts,
-        toggleTool, createGuideRequest, updateGuideStatus, payGuideRequest, cancelGuideRequest,
-        completeCheckout, updateStoreOrderStatus, reportDamageDispute, resolveDispute,
-        sendChatMessage, clearBooking, totalPrice
-      }}
-    >
+    <BookingContext.Provider value={{ selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts, toggleTool, createGuideRequest, updateGuideStatus, payGuideRequest, cancelGuideRequest, completeCheckout, updateStoreOrderStatus, reportDamageDispute, resolveDispute, sendChatMessage, clearBooking, totalPrice }}>
       {children}
     </BookingContext.Provider>
   );

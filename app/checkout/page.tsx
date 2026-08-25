@@ -11,8 +11,10 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { selectedTools, totalPrice, completeCheckout } = useBooking();
-  const [startDate, setStartDate] = React.useState("2025-06-15");
-  const [endDate, setEndDate] = React.useState("2025-06-17");
+  
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = React.useState(today);
+  const [endDate, setEndDate] = React.useState(today);
   const [meetingPoint, setMeetingPoint] = React.useState("Dermaga Sulamadaha, Ternate");
   const [isQrisOpen, setIsQrisOpen] = React.useState(false);
   const [isPaid, setIsPaid] = React.useState(false);
@@ -21,7 +23,7 @@ export default function CheckoutPage() {
     setIsPaid(true);
     setTimeout(() => {
       completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur");
-      router.push("/ticket/TRX-GAMTARA-7890");
+      router.push("/profile"); // Redirect ke profil agar melihat tiket
     }, 1500);
   };
 
@@ -49,23 +51,23 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-7 space-y-6">
-            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4">
+            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
               <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#1d3a28]" /> Tanggal Sewa Pelaksanaan
               </h3>
               <div className="grid grid-cols-2 gap-4 text-xs font-mono">
                 <div>
                   <label className="block text-stone-500 mb-1">Mulai Sewa</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
+                  <input type="date" min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
                 </div>
                 <div>
                   <label className="block text-stone-500 mb-1">Selesai Sewa</label>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
+                  <input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4">
+            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
               <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#1d3a28]" /> Titik Jemput / Pickup Point
               </h3>
@@ -85,17 +87,14 @@ export default function CheckoutPage() {
                   </div>
                 ))}
               </div>
-
               <div className="pt-4 border-t border-stone-800 flex justify-between items-end">
                 <div>
-                  <span className="text-[10px] text-stone-400 block">TOTAL PEMBAYARAN</span>
+                  <span className="text-[10px] text-stone-400 block">TOTAL PEMBAYARAN (SEKALI BAYAR)</span>
                   <span className="text-lg font-extrabold text-[#c5922e]">Rp {totalPrice.toLocaleString("id-ID")}</span>
                 </div>
               </div>
-
               <button onClick={() => setIsQrisOpen(true)} className="w-full py-3.5 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 border border-emerald-800">
-                <QrCode className="w-4 h-4 text-[#c5922e]" />
-                <span>Bayar via QRIS</span>
+                <QrCode className="w-4 h-4 text-[#c5922e]" /><span>Bayar via QRIS</span>
               </button>
             </div>
           </div>
@@ -108,7 +107,7 @@ export default function CheckoutPage() {
               <div className="bg-white p-4 border border-stone-300 rounded-sm inline-block">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-PAYMENT-7890" alt="QRIS Code" className="w-44 h-44 mx-auto" />
               </div>
-              <p className="text-xs text-stone-600 font-mono">Scan menggunakan Bank BCA / GoPay / OVO / Dana</p>
+              <p className="text-xs text-stone-600 font-mono">Scan menggunakan Bank BCA / GoPay / Dana</p>
               
               <button onClick={handleSimulatePayment} disabled={isPaid} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-sm font-mono text-xs uppercase tracking-wider font-bold cursor-pointer transition-all flex items-center justify-center gap-2">
                 {isPaid ? <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Pembayaran Berhasil...</> : "Simulasi Bayar Sekarang"}
