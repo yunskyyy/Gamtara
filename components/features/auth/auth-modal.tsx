@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { X, ShieldCheck } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { useAuth, UserRole } from "@/lib/context/auth-context";
 
@@ -25,6 +25,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [role, setRole] = React.useState<UserRole>("customer");
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
+  
+  // Syarat Khusus
+  const [businessName, setBusinessName] = React.useState("");
+  const [idNumber, setIdNumber] = React.useState("");
+  const [licenseNumber, setLicenseNumber] = React.useState("");
+  const [languages, setLanguages] = React.useState("");
+  
   const [errorMsg, setErrorMsg] = React.useState("");
 
   if (!isOpen) return null;
@@ -36,33 +43,20 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
     if (isLogin) {
       const res = await login(email, password);
-      if (!res.success) {
-        setErrorMsg(res.message || "Gagal masuk");
-        setIsLoading(false);
-        return;
-      }
+      if (!res.success) setErrorMsg(res.message || "Gagal masuk");
+      else onClose();
     } else {
-      if (password.length < 6) {
-        setErrorMsg("Kata sandi minimal 6 karakter!");
-        setIsLoading(false);
-        return;
+      if (password.length < 6) { setErrorMsg("Kata sandi minimal 6 karakter!"); setIsLoading(false); return; }
+      if (password !== confirmPassword) { setErrorMsg("Konfirmasi kata sandi tidak cocok!"); setIsLoading(false); return; }
+      
+      const res = await register({ name, email, phone, origin, address, gender, role, businessName, idNumber, licenseNumber, languages }, password);
+      if (!res.success) setErrorMsg(res.message || "Gagal mendaftar");
+      else {
+        if (res.message) alert(res.message);
+        onClose();
       }
-      if (password !== confirmPassword) {
-        setErrorMsg("Konfirmasi kata sandi tidak cocok!");
-        setIsLoading(false);
-        return;
-      }
-      const res = await register({ name, email, phone, origin, address, gender, role }, password);
-      if (!res.success) {
-        setErrorMsg(res.message || "Gagal mendaftar");
-        setIsLoading(false);
-        return;
-      }
-      if (res.message) alert(res.message);
     }
-    
     setIsLoading(false);
-    onClose();
   };
 
   return (
@@ -75,9 +69,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           <div className="text-center mb-6">
             <Logo variant="full" height={48} className="mx-auto mb-2" />
-            <p className="text-xs text-stone-600 font-medium">
-              {isLogin ? "Masuk ke Akun Terdaftar GAMTARA" : "Pendaftaran Akun Baru GAMTARA"}
-            </p>
+            <p className="text-xs text-stone-600 font-medium">{isLogin ? "Masuk ke Akun Terdaftar GAMTARA" : "Pendaftaran Akun Baru GAMTARA"}</p>
           </div>
 
           {errorMsg && <div className="p-3 bg-rose-100 border border-rose-300 text-rose-800 text-xs rounded-sm mb-4 font-bold">{errorMsg}</div>}
@@ -100,6 +92,22 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <div><label className="block font-bold text-stone-700 mb-1">Gender</label><select value={gender} onChange={(e) => setGender(e.target.value as any)} className="w-full px-3.5 py-2 rounded-sm bg-white border border-stone-300"><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select></div>
                 </div>
                 <div><label className="block font-bold text-stone-700 mb-1">Alamat Lengkap</label><input type="text" required value={address} onChange={(e) => setAddress(e.target.value)} className="w-full px-3.5 py-2 rounded-sm bg-white border border-stone-300" /></div>
+
+                {role === "pemilik" && (
+                  <div className="p-3 bg-[#1d3a28]/10 border border-[#1d3a28]/30 rounded-sm space-y-2">
+                    <p className="font-bold text-[#1d3a28] flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Syarat Pemilik Barang</p>
+                    <input type="text" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Nama Toko / Usaha" className="w-full px-3 py-1.5 rounded-sm bg-white border border-stone-300 text-xs" />
+                    <input type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="Nomor NIB / NIK KTP" className="w-full px-3 py-1.5 rounded-sm bg-white border border-stone-300 text-xs" />
+                  </div>
+                )}
+
+                {role === "pemandu" && (
+                  <div className="p-3 bg-[#c5922e]/10 border border-[#c5922e]/30 rounded-sm space-y-2">
+                    <p className="font-bold text-[#c5922e] flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Syarat Pemandu Wisata</p>
+                    <input type="text" required value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} placeholder="No. Lisensi HPI" className="w-full px-3 py-1.5 rounded-sm bg-white border border-stone-300 text-xs" />
+                    <input type="text" required value={languages} onChange={(e) => setLanguages(e.target.value)} placeholder="Bahasa (Cth: Indonesia, English)" className="w-full px-3 py-1.5 rounded-sm bg-white border border-stone-300 text-xs" />
+                  </div>
+                )}
               </>
             )}
 
