@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
+import { createBrowserClient } from "@supabase/ssr";
 
 export type UserRole = "customer" | "pemilik" | "pemandu" | "admin";
 export type AccountStatus = "approved" | "pending_approval";
@@ -15,19 +16,15 @@ export interface UserProfile {
   gender: "Laki-laki" | "Perempuan";
   role: UserRole;
   status: AccountStatus;
-  password?: string;
   avatar?: string;
 }
 
 interface AuthContextType {
   user: UserProfile | null;
-  registeredUsers: UserProfile[];
   isLoaded: boolean;
-  login: (email: string, pass: string) => { success: boolean; message?: string };
-  register: (profile: Omit<UserProfile, "id" | "status">) => { success: boolean; message?: string };
-  updateAvatar: (avatarUrl: string) => void;
-  approveMitra: (userId: string) => void;
-  logout: () => void;
+  login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  register: (profile: Omit<UserProfile, "id" | "status">, pass: string) => Promise<{ success: boolean; message?: string }>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -35,72 +32,127 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [isLoaded, setIsLoaded] = React.useState(false);
-  
-  const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([
-    { id: "ADM-1", name: "SuperAdmin", email: "admin@gamtara.com", phone: "0811", origin: "Ternate", address: "Pusat", gender: "Laki-laki", role: "admin", status: "approved", password: "password123", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop" },
-    { id: "VEN-1", name: "Toko Gamalama Outdoor", email: "gamalama.outdoor@gamtara.com", phone: "0812", origin: "Ternate", address: "Tengah", gender: "Laki-laki", role: "pemilik", status: "approved", password: "password123", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop" },
-    { id: "GUI-1", name: "Fikri Subur", email: "fikri.guide@gamtara.com", phone: "0813", origin: "Ternate", address: "Sulamadaha", gender: "Laki-laki", role: "pemandu", status: "approved", password: "password123", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop" },
-    { id: "CUS-1", name: "Wisatawan Subur", email: "wisatawan@gamtara.com", phone: "0814", origin: "Jakarta", address: "Hotel", gender: "Laki-laki", role: "customer", status: "approved", password: "password123", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop" }
-  ]);
 
-  // Load Persistent Auth
-  React.useEffect(() => {
-    const storedUser = localStorage.getItem("gamtara_user");
-    const storedReg = localStorage.getItem("gamtara_reg_users");
-    if (storedUser) setUser(JSON.parse(storedUser));
-    if (storedReg) setRegisteredUsers(JSON.parse(storedReg));
-    setIsLoaded(true);
-  }, []);
+  // Inisialisasi Supabase Client
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  // Simpan jika ada perubahan Register Users
-  React.useEffect(() => {
-    if (isLoaded) localStorage.setItem("gamtara_reg_users", JSON.stringify(registeredUsers));
-  }, [registeredUsers, isLoaded]);
+  // Fungsi untuk menarik data profil dari tabel 'profiles' berdasarkan User ID
+  const fetchProfile = async (userId: string, email: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-  const login = (email: string, pass: string) => {
-    const found = registeredUsers.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.password === pass);
-    if (!found) return { success: false, message: "Email atau kata sandi salah!" };
-    if (found.status === "pending_approval") return { success: false, message: "Akun Mitra Anda menunggu verifikasi Admin!" };
-    
-    setUser(found);
-    localStorage.setItem("gamtara_user", JSON.stringify(found));
-    return { success: true };
-  };
-
-  const register = (profileData: Omit<UserProfile, "id" | "status">) => {
-    const exists = registeredUsers.some((u) => u.email.toLowerCase() === profileData.email.toLowerCase());
-    if (exists) return { success: false, message: "Email sudah terdaftar!" };
-
-    const initialStatus: AccountStatus = profileData.role === "customer" ? "approved" : "pending_approval";
-    const newUser: UserProfile = { ...profileData, id: `USR-${Date.now()}`, status: initialStatus, avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop" };
-    
-    setRegisteredUsers((prev) => [...prev, newUser]);
-    if (initialStatus === "approved") {
-      setUser(newUser);
-      localStorage.setItem("gamtara_user", JSON.stringify(newUser));
+    if (data) {
+      setUser({
+        id: data.id,
+        name: data.full_name,
+        email: email,
+        phone: data.phone || "",
+        origin: data.origin || "",
+        address: data.address || "",
+        gender: data.gender || "Laki-laki",
+        role: data.role as UserRole,
+        status: "approved", // Asumsi approved untuk saat ini
+        avatar: data.avatar_url || "",
+      });
     }
-    return { success: true, message: initialStatus === "pending_approval" ? "Pendaftaran Mitra Berhasil! Tunggu verifikasi Admin." : undefined };
   };
 
-  const updateAvatar = (avatarUrl: string) => {
-    if (!user) return;
-    const updated = { ...user, avatar: avatarUrl };
-    setUser(updated);
-    localStorage.setItem("gamtara_user", JSON.stringify(updated));
-    setRegisteredUsers((prev) => prev.map((u) => (u.id === user.id ? updated : u)));
+  // Cek Sesi Aktif saat web pertama kali dimuat
+  React.useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchProfile(session.user.id, session.user.email!);
+      }
+      setIsLoaded(true);
+    };
+
+    checkSession();
+
+    // Listener jika ada perubahan status login (misal login di tab lain)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session?.user) {
+        await fetchProfile(session.user.id, session.user.email!);
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  // Fungsi Login Real Supabase
+  const login = async (email: string, pass: string) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: pass,
+    });
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    if (data.user) {
+      await fetchProfile(data.user.id, data.user.email!);
+      return { success: true };
+    }
+    return { success: false, message: "Terjadi kesalahan saat login." };
   };
 
-  const approveMitra = (userId: string) => {
-    setRegisteredUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, status: "approved" } : u)));
+  // Fungsi Register Real Supabase (Auth + Insert ke Tabel Profiles)
+  const register = async (profileData: Omit<UserProfile, "id" | "status">, pass: string) => {
+    // 1. Daftarkan ke Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: profileData.email,
+      password: pass,
+    });
+
+    if (authError) {
+      return { success: false, message: authError.message };
+    }
+
+    if (authData.user) {
+      // 2. Insert data diri ke tabel 'profiles'
+      const { error: profileError } = await supabase.from("profiles").insert([
+        {
+          id: authData.user.id,
+          full_name: profileData.name,
+          phone: profileData.phone,
+          origin: profileData.origin,
+          address: profileData.address,
+          gender: profileData.gender,
+          role: profileData.role,
+        },
+      ]);
+
+      if (profileError) {
+        return { success: false, message: "Gagal menyimpan data profil: " + profileError.message };
+      }
+
+      // Jika berhasil, otomatis login
+      await fetchProfile(authData.user.id, profileData.email);
+      return { success: true, message: "Pendaftaran berhasil!" };
+    }
+
+    return { success: false, message: "Terjadi kesalahan saat mendaftar." };
   };
 
-  const logout = () => {
+  // Fungsi Logout Real Supabase
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("gamtara_user");
   };
 
   return (
-    <AuthContext.Provider value={{ user, registeredUsers, isLoaded, login, register, updateAvatar, approveMitra, logout }}>
+    <AuthContext.Provider value={{ user, isLoaded, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
