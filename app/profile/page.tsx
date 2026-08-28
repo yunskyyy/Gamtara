@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useAuth } from "@/lib/context/auth-context";
 import { useBooking } from "@/lib/context/booking-context";
-import { User, Phone, MapPin, Mail, Upload, Ticket, MessageSquare, Store, Compass, QrCode, X } from "lucide-react";
+import { User, Phone, MapPin, Mail, Upload, Ticket, MessageSquare, Store, Compass, QrCode, X, LogOut, Shield } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 
 export default function ProfilePage() {
@@ -27,6 +27,7 @@ export default function ProfilePage() {
       <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
         <Navbar />
         <div className="max-w-md mx-auto bg-white p-8 border border-stone-300 rounded-sm mt-12 space-y-4">
+          <Shield className="w-12 h-12 text-[#1d3a28] mx-auto" />
           <h2 className="text-xl font-bold">Silakan Masuk Terlebih Dahulu</h2>
           <button onClick={() => router.push("/")} className="bg-[#1d3a28] text-white px-6 py-2.5 rounded-sm font-mono text-xs uppercase font-bold cursor-pointer">Kembali</button>
         </div>
@@ -34,7 +35,6 @@ export default function ProfilePage() {
     );
   }
 
-  // FUNGSI UPLOAD REAL KE SUPABASE STORAGE
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -44,10 +44,7 @@ export default function ProfilePage() {
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;
     const filePath = `avatars/${fileName}`;
 
-    // 1. Upload ke bucket 'gamtara-storage'
-    const { error: uploadError } = await supabase.storage
-      .from('gamtara-storage')
-      .upload(filePath, file);
+    const { error: uploadError } = await supabase.storage.from('gamtara-storage').upload(filePath, file);
 
     if (uploadError) {
       alert("Gagal mengunggah foto: " + uploadError.message);
@@ -55,12 +52,7 @@ export default function ProfilePage() {
       return;
     }
 
-    // 2. Dapatkan URL Publik
-    const { data: { publicUrl } } = supabase.storage
-      .from('gamtara-storage')
-      .getPublicUrl(filePath);
-
-    // 3. Simpan URL ke tabel profiles
+    const { data: { publicUrl } } = supabase.storage.from('gamtara-storage').getPublicUrl(filePath);
     await updateAvatar(publicUrl);
     setIsUploading(false);
     alert("Foto profil berhasil diperbarui!");
@@ -111,10 +103,10 @@ export default function ProfilePage() {
             </div>
 
             <div className="pt-4 border-t border-stone-200 text-left text-xs space-y-2 font-sans">
-              <p className="flex items-center gap-2 text-stone-700"><Mail className="w-3.5 h-3.5 text-[#1d3a28]" /> {user.email}</p>
-              <p className="flex items-center gap-2 text-stone-700"><Phone className="w-3.5 h-3.5 text-[#1d3a28]" /> {user.phone}</p>
-              <p className="flex items-center gap-2 text-stone-700"><MapPin className="w-3.5 h-3.5 text-[#1d3a28]" /> Asal: {user.origin}</p>
-              <p className="flex items-center gap-2 text-stone-700"><User className="w-3.5 h-3.5 text-[#1d3a28]" /> Gender: {user.gender}</p>
+              <p className="text-stone-700 flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-[#1d3a28]" /> {user.email}</p>
+              <p className="text-stone-700 flex items-center gap-2"><Phone className="w-3.5 h-3.5 text-[#1d3a28]" /> {user.phone}</p>
+              <p className="text-stone-700 flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-[#1d3a28]" /> Asal: {user.origin}</p>
+              <p className="text-stone-700 flex items-center gap-2"><User className="w-3.5 h-3.5 text-[#1d3a28]" /> Gender: {user.gender}</p>
             </div>
           </div>
 
@@ -151,10 +143,72 @@ export default function ProfilePage() {
                     ))
                   )}
                 </div>
+
+                <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-4">
+                  <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-3 flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-[#1d3a28]" /> Riwayat Permintaan Pemandu Wisata
+                  </h3>
+                  {guideRequests.length === 0 ? (
+                    <p className="text-xs text-stone-500 font-mono py-2">Belum ada permintaan pemandu dikirim.</p>
+                  ) : (
+                    guideRequests.map((req) => (
+                      <div key={req.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+                        <div>
+                          <p className="font-bold text-sm text-stone-900">{req.guideName} ({req.selectedDestination})</p>
+                          <p className="text-stone-500 font-mono">Tarif: Rp {req.price.toLocaleString("id-ID")} / hari</p>
+                          <span className="inline-block mt-1 px-2 py-0.5 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold uppercase">
+                            STATUS: {req.status}
+                          </span>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {req.status === "DISETUJUI" && (
+                            <button onClick={() => setPayingReqId(req.id)} className="px-4 py-2 bg-[#1d3a28] text-white text-xs font-bold uppercase font-mono rounded-sm flex items-center gap-1.5 cursor-pointer">
+                              <QrCode className="w-3.5 h-3.5 text-[#c5922e]" /> Bayar QRIS Sekarang
+                            </button>
+                          )}
+                          {req.status === "LUNAS" && (
+                            <Link href={`/chat/${req.id}`} className="px-4 py-2 bg-[#1d3a28] hover:bg-[#152a1b] text-white text-xs font-bold uppercase rounded-sm flex items-center gap-1.5">
+                              <MessageSquare className="w-3.5 h-3.5" /> Buka Room Chat
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </>
+            )}
+
+            {(user.role === "pemilik" || user.role === "pemandu") && (
+              <div className="bg-white border border-stone-300 rounded-sm p-8 text-center space-y-4">
+                <h3 className="text-base font-extrabold">Portal Operasional Mitra Aktif</h3>
+                <p className="text-xs text-stone-600">Kelola pesanan masuk, verifikasi foto alat sebelum/sesudah, dan konfirmasi jadwal klien di Dashboard Mitra.</p>
+                <Link href={user.role === "pemilik" ? "/vendor/pemilik" : "/vendor/pemandu"} className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
+                  Buka Dashboard Operasional {user.role === "pemilik" ? "Pemilik Barang" : "Pemandu Wisata"}
+                </Link>
+              </div>
             )}
           </div>
         </div>
+
+        {payingReqId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+            <div className="bg-[#f4f2eb] p-8 rounded-sm max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
+              <div className="flex justify-between items-center border-b border-stone-300 pb-2">
+                <h3 className="font-extrabold text-sm uppercase font-mono">BAYAR JASA PEMANDU</h3>
+                <button onClick={() => setPayingReqId(null)} className="cursor-pointer"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="bg-white p-4 border border-stone-300 rounded-sm inline-block">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-GUIDE-PAYMENT" alt="QRIS Code" className="w-44 h-44 mx-auto" />
+              </div>
+              <button onClick={handleConfirmPayGuide} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-sm font-mono text-xs uppercase font-bold tracking-wider cursor-pointer shadow-md">
+                Simulasi Bayar Sekarang
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </main>
   );

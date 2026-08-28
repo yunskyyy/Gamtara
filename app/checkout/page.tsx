@@ -21,6 +21,9 @@ export default function CheckoutPage() {
   
   const [payingVendor, setPayingVendor] = React.useState<string | null>(null);
   const [paidVendors, setPaidVendors] = React.useState<string[]>([]);
+  
+  // FIX: Kembalikan state isPaid yang hilang
+  const [isPaid, setIsPaid] = React.useState(false);
 
   const groupedOrders = React.useMemo(() => {
     return selectedTools.reduce((acc, item) => {
@@ -31,15 +34,17 @@ export default function CheckoutPage() {
   }, [selectedTools]);
 
   const handleSimulatePayment = (vendorName: string) => {
-    setPaidVendors((prev) => [...prev, vendorName]);
-    setPayingVendor(null);
-    
-    if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-      setTimeout(() => {
+    setIsPaid(true);
+    setTimeout(() => {
+      setPaidVendors((prev) => [...prev, vendorName]);
+      setPayingVendor(null);
+      setIsPaid(false); // Reset untuk pembayaran toko berikutnya
+      
+      if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
         completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur");
         router.push("/profile");
-      }, 1500);
-    }
+      }
+    }, 1500);
   };
 
   if (selectedTools.length === 0) {
@@ -67,19 +72,19 @@ export default function CheckoutPage() {
 
         <div className="space-y-8">
           {Object.entries(groupedOrders).map(([vendorName, items]) => {
-            const isPaid = paidVendors.includes(vendorName);
+            const isVendorPaid = paidVendors.includes(vendorName);
             const deliveryType = deliveryOptions[vendorName] || "pickup";
             const itemsTotal = items.reduce((sum, i) => sum + i.price, 0);
             const shippingFee = deliveryType === "delivery" ? 15000 : 0;
             const grandTotal = itemsTotal + shippingFee;
 
             return (
-              <div key={vendorName} className={`bg-white border rounded-sm p-6 shadow-sm ${isPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
+              <div key={vendorName} className={`bg-white border rounded-sm p-6 shadow-sm ${isVendorPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
                 <div className="flex justify-between items-center border-b border-stone-200 pb-4 mb-4">
                   <h3 className="font-bold text-lg flex items-center gap-2 text-[#1d3a28]">
                     <Store className="w-5 h-5" /> {vendorName}
                   </h3>
-                  {isPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
+                  {isVendorPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -96,7 +101,7 @@ export default function CheckoutPage() {
                       </ul>
                     </div>
 
-                    {!isPaid && (
+                    {!isVendorPaid && (
                       <div className="space-y-3">
                         <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
                         <div className="flex gap-4">
@@ -126,7 +131,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
-                    {!isPaid ? (
+                    {!isVendorPaid ? (
                       <button onClick={() => setPayingVendor(vendorName)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md">
                         <QrCode className="w-4 h-4 text-[#c5922e]" /> Bayar Pesanan Ini
                       </button>
