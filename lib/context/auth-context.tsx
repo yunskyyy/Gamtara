@@ -21,9 +21,12 @@ export interface UserProfile {
 
 interface AuthContextType {
   user: UserProfile | null;
+  registeredUsers: UserProfile[]; // Dikembalikan untuk Admin Dashboard
   isLoaded: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   register: (profile: Omit<UserProfile, "id" | "status">, pass: string) => Promise<{ success: boolean; message?: string }>;
+  updateAvatar: (avatarUrl: string) => Promise<void>; // Dikembalikan untuk Profile Page
+  approveMitra: (userId: string) => Promise<void>; // Dikembalikan untuk Admin Dashboard
   logout: () => Promise<void>;
 }
 
@@ -31,22 +34,16 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
 
-  // Inisialisasi Supabase Client
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Fungsi untuk menarik data profil dari tabel 'profiles' berdasarkan User ID
   const fetchProfile = async (userId: string, email: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) {
       setUser({
         id: data.id,
@@ -57,102 +54,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         address: data.address || "",
         gender: data.gender || "Laki-laki",
         role: data.role as UserRole,
-        status: "approved", // Asumsi approved untuk saat ini
+        status: data.status as AccountStatus || "approved",
         avatar: data.avatar_url || "",
       });
     }
   };
 
-  // Cek Sesi Aktif saat web pertama kali dimuat
+  const fetchAllUsers = async () => {
+    const { data } = await supabase.from("profiles").select("*");
+    if (data) {
+      setRegisteredUsers(data.map((d: any) => ({
+        id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
+        origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
+        role: d.role as UserRole, status: d.status as AccountStatus || "approved", avatar: d.avatar_url || ""
+      })));
+    }
+  };
+
   React.useEffect(() => {
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email!);
+        if (session.user.email === "admin@gamtara.com") await fetchAllUsers(); // Admin butuh data semua user
       }
       setIsLoaded(true);
     };
-
     checkSession();
-
-    // Listener jika ada perubahan status login (misal login di tab lain)
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        await fetchProfile(session.user.id, session.user.email!);
-      } else if (event === "SIGNED_OUT") {
-        setUser(null);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, [supabase]);
 
-  // Fungsi Login Real Supabase
   const login = async (email: string, pass: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: pass,
-    });
-
-    if (error) {
-      return { success: false, message: error.message };
-    }
-
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) return { success: false, message: error.message };
     if (data.user) {
       await fetchProfile(data.user.id, data.user.email!);
+      if (email === "admin@gamtara.com") await fetchAllUsers();
       return { success: true };
     }
     return { success: false, message: "Terjadi kesalahan saat login." };
   };
 
-  // Fungsi Register Real Supabase (Auth + Insert ke Tabel Profiles)
   const register = async (profileData: Omit<UserProfile, "id" | "status">, pass: string) => {
-    // 1. Daftarkan ke Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: profileData.email,
-      password: pass,
-    });
-
-    if (authError) {
-      return { success: false, message: authError.message };
-    }
+    const { data: authData, error: authError } = await supabase.auth.signUp({ email: profileData.email, password: pass });
+    if (authError) return { success: false, message: authError.message };
 
     if (authData.user) {
-      // 2. Insert data diri ke tabel 'profiles'
-      const { error: profileError } = await supabase.from("profiles").insert([
-        {
-          id: authData.user.id,
-          full_name: profileData.name,
-          phone: profileData.phone,
-          origin: profileData.origin,
-          address: profileData.address,
-          gender: profileData.gender,
-          role: profileData.role,
-        },
-      ]);
-
-      if (profileError) {
-        return { success: false, message: "Gagal menyimpan data profil: " + profileError.message };
-      }
-
-      // Jika berhasil, otomatis login
+      const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
+      await supabase.from("profiles").insert([{
+        id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
+        origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus
+      }]);
       await fetchProfile(authData.user.id, profileData.email);
       return { success: true, message: "Pendaftaran berhasil!" };
     }
-
     return { success: false, message: "Terjadi kesalahan saat mendaftar." };
   };
 
-  // Fungsi Logout Real Supabase
+  const updateAvatar = async (avatarUrl: string) => {
+    if (!user) return;
+    await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+    setUser({ ...user, avatar: avatarUrl });
+  };
+
+  const approveMitra = async (userId: string) => {
+    await supabase.from("profiles").update({ status: "approved" }).eq("id", userId);
+    await fetchAllUsers(); // Refresh data admin
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoaded, login, register, logout }}>
+    <AuthContext.Provider value={{ user, registeredUsers, isLoaded, login, register, updateAvatar, approveMitra, logout }}>
       {children}
     </AuthContext.Provider>
   );
