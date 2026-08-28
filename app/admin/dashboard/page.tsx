@@ -4,10 +4,10 @@ import * as React from "react";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useAuth } from "@/lib/context/auth-context";
 import { useBooking } from "@/lib/context/booking-context";
-import { ShieldAlert, DollarSign, UserCheck, Check, X } from "lucide-react";
+import { ShieldAlert, DollarSign, UserCheck, Check } from "lucide-react";
 
 export default function AdminDashboardPage() {
-  const { user, registeredUsers, approveMitra } = useAuth();
+  const { registeredUsers, approveMitra } = useAuth();
   const { disputes, payouts, resolveDispute } = useBooking();
 
   const pendingMitra = registeredUsers.filter((u) => u.status === "pending_approval");
@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
           )}
         </div>
 
-        {/* 2. Dispute Investigation (Live Sengketa Foto Before vs After) */}
+        {/* 2. Dispute Investigation */}
         <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-6">
           <div className="flex justify-between items-center border-b border-stone-200 pb-3">
             <h3 className="font-bold text-sm font-mono uppercase text-rose-700 flex items-center gap-2">

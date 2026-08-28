@@ -4,24 +4,42 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useBooking } from "@/lib/context/booking-context";
-import { QrCode, CheckCircle2, Calendar, MapPin } from "lucide-react";
+import { useAuth } from "@/lib/context/auth-context";
+import { QrCode, CheckCircle2, Calendar, MapPin, Truck, Store } from "lucide-react";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  // FIX: totalPrice ditambahkan kembali ke sini
-  const { selectedTools, totalPrice, clearBooking } = useBooking();
-  const [startDate, setStartDate] = React.useState("2025-06-15");
-  const [endDate, setEndDate] = React.useState("2025-06-17");
-  const [meetingPoint, setMeetingPoint] = React.useState("Dermaga Sulamadaha, Ternate");
-  const [isQrisOpen, setIsQrisOpen] = React.useState(false);
-  const [isPaid, setIsPaid] = React.useState(false);
+  const { user } = useAuth();
+  const { selectedTools, totalPrice, completeCheckout } = useBooking();
+  
+  const today = new Date().toISOString().split('T')[0];
+  const [startDate, setStartDate] = React.useState(today);
+  const [endDate, setEndDate] = React.useState(today);
+  
+  const [deliveryOptions, setDeliveryOptions] = React.useState<Record<string, "pickup" | "delivery">>({});
+  const [meetingPoint, setMeetingPoint] = React.useState("");
+  
+  const [payingVendor, setPayingVendor] = React.useState<string | null>(null);
+  const [paidVendors, setPaidVendors] = React.useState<string[]>([]);
 
-  const handleSimulatePayment = () => {
-    setIsPaid(true);
-    setTimeout(() => {
-      clearBooking();
-      router.push("/ticket/TRX-GAMTARA-7890");
-    }, 1500);
+  const groupedOrders = React.useMemo(() => {
+    return selectedTools.reduce((acc, item) => {
+      acc[item.ownerName] = acc[item.ownerName] || [];
+      acc[item.ownerName].push(item);
+      return acc;
+    }, {} as Record<string, typeof selectedTools>);
+  }, [selectedTools]);
+
+  const handleSimulatePayment = (vendorName: string) => {
+    setPaidVendors((prev) => [...prev, vendorName]);
+    setPayingVendor(null);
+    
+    if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
+      setTimeout(() => {
+        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur");
+        router.push("/profile");
+      }, 1500);
+    }
   };
 
   if (selectedTools.length === 0) {
@@ -40,76 +58,101 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
       <Navbar />
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="border-b border-stone-300 pb-6 mb-8">
           <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// FASE 2: TRANSAKSI ALAT SEWA</span>
           <h1 className="text-4xl font-extrabold tracking-tight mt-1">Selesaikan Pesanan Sewa</h1>
+          <p className="text-sm text-stone-600 mt-2">Pesanan Anda dipisahkan berdasarkan Toko Pemilik Barang. Lakukan pembayaran untuk masing-masing toko.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-7 space-y-6">
-            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
-              <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#1d3a28]" /> Tanggal Sewa Pelaksanaan
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                <div>
-                  <label className="block text-stone-500 mb-1">Mulai Sewa</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
-                </div>
-                <div>
-                  <label className="block text-stone-500 mb-1">Selesai Sewa</label>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
-                </div>
-              </div>
-            </div>
+        <div className="space-y-8">
+          {Object.entries(groupedOrders).map(([vendorName, items]) => {
+            const isPaid = paidVendors.includes(vendorName);
+            const deliveryType = deliveryOptions[vendorName] || "pickup";
+            const itemsTotal = items.reduce((sum, i) => sum + i.price, 0);
+            const shippingFee = deliveryType === "delivery" ? 15000 : 0;
+            const grandTotal = itemsTotal + shippingFee;
 
-            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
-              <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#1d3a28]" /> Titik Jemput / Pickup Point
-              </h3>
-              <input type="text" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full p-3 bg-[#f4f2eb] border border-stone-300 rounded-sm text-xs font-sans" />
-              <p className="text-[11px] text-stone-500">Alat dapat diambil langsung di toko pemilik atau diantar ke titik temu.</p>
-            </div>
-          </div>
+            return (
+              <div key={vendorName} className={`bg-white border rounded-sm p-6 shadow-sm ${isPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
+                <div className="flex justify-between items-center border-b border-stone-200 pb-4 mb-4">
+                  <h3 className="font-bold text-lg flex items-center gap-2 text-[#1d3a28]">
+                    <Store className="w-5 h-5" /> {vendorName}
+                  </h3>
+                  {isPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
+                </div>
 
-          <div className="md:col-span-5">
-            <div className="bg-[#18221c] text-stone-100 p-6 border border-stone-800 rounded-sm space-y-6 font-mono text-xs shadow-xl">
-              <h3 className="font-bold uppercase tracking-wider text-[#c5922e] border-b border-stone-800 pb-3">RINGKASAN ITEM SEWA</h3>
-              <div className="space-y-3">
-                {selectedTools.map((t) => (
-                  <div key={t.id} className="flex justify-between items-center">
-                    <span>{t.name}</span>
-                    <span className="font-bold text-[#c5922e]">Rp {t.price.toLocaleString("id-ID")}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-xs font-mono font-bold text-stone-500 mb-2 uppercase">Daftar Barang:</h4>
+                      <ul className="space-y-2">
+                        {items.map((item) => (
+                          <li key={item.id} className="flex justify-between text-sm font-bold text-stone-800">
+                            <span>{item.name}</span>
+                            <span>Rp {item.price.toLocaleString("id-ID")}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {!isPaid && (
+                      <div className="space-y-3">
+                        <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
+                            <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko (Gratis)
+                          </label>
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
+                            <Truck className="w-4 h-4 text-stone-600" /> Diantar (Rp 15.000)
+                          </label>
+                        </div>
+                        
+                        {deliveryType === "delivery" && (
+                          <input type="text" placeholder="Masukkan alamat pengantaran lengkap..." value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm text-xs mt-2" />
+                        )}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
 
-              <div className="pt-4 border-t border-stone-800 flex justify-between items-end">
-                <div>
-                  <span className="text-[10px] text-stone-400 block">TOTAL PEMBAYARAN</span>
-                  <span className="text-lg font-extrabold text-[#c5922e]">Rp {totalPrice.toLocaleString("id-ID")}</span>
+                  <div className="bg-[#f9f8f3] p-5 rounded-sm border border-stone-200 flex flex-col justify-between">
+                    <div className="space-y-2 text-sm mb-6">
+                      <div className="flex justify-between text-stone-600"><span>Subtotal Alat:</span><span>Rp {itemsTotal.toLocaleString("id-ID")}</span></div>
+                      <div className="flex justify-between text-stone-600"><span>Ongkos Kirim:</span><span>Rp {shippingFee.toLocaleString("id-ID")}</span></div>
+                      <div className="flex justify-between font-extrabold text-lg text-[#1d3a28] pt-2 border-t border-stone-300">
+                        <span>Total Bayar:</span><span>Rp {grandTotal.toLocaleString("id-ID")}</span>
+                      </div>
+                    </div>
+
+                    {!isPaid ? (
+                      <button onClick={() => setPayingVendor(vendorName)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md">
+                        <QrCode className="w-4 h-4 text-[#c5922e]" /> Bayar Pesanan Ini
+                      </button>
+                    ) : (
+                      <button disabled className="w-full py-3 bg-stone-200 text-stone-500 font-bold uppercase tracking-wider rounded-sm cursor-not-allowed flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> Pesanan Lunas
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              <button onClick={() => setIsQrisOpen(true)} className="w-full py-3.5 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 border border-emerald-800 shadow-lg">
-                <QrCode className="w-4 h-4 text-[#c5922e]" />
-                <span>Bayar via QRIS</span>
-              </button>
-            </div>
-          </div>
+            );
+          })}
         </div>
 
-        {isQrisOpen && (
+        {payingVendor && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
             <div className="bg-[#f4f2eb] p-8 rounded-sm max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
-              <h3 className="font-extrabold text-base text-stone-900 uppercase font-mono">SIMULASI PEMBAYARAN QRIS</h3>
+              <h3 className="font-extrabold text-base text-stone-900 uppercase font-mono">PEMBAYARAN QRIS</h3>
+              <p className="text-sm font-bold text-[#1d3a28]">{payingVendor}</p>
               <div className="bg-white p-4 border border-stone-300 rounded-sm inline-block">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-PAYMENT-7890" alt="QRIS Code" className="w-44 h-44 mx-auto" />
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-PAYMENT" alt="QRIS Code" className="w-44 h-44 mx-auto" />
               </div>
-              <p className="text-xs text-stone-600 font-mono">Scan menggunakan Bank BCA / GoPay / Dana</p>
+              <p className="text-xs text-stone-600 font-mono">Scan menggunakan Bank BCA / GoPay / OVO / Dana</p>
               
-              <button onClick={handleSimulatePayment} disabled={isPaid} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-sm font-mono text-xs uppercase tracking-wider font-bold cursor-pointer transition-all flex items-center justify-center gap-2">
+              <button onClick={() => handleSimulatePayment(payingVendor)} disabled={isPaid} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-sm font-mono text-xs uppercase tracking-wider font-bold cursor-pointer transition-all flex items-center justify-center gap-2">
                 {isPaid ? <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Pembayaran Berhasil...</> : "Simulasi Bayar Sekarang"}
               </button>
             </div>
