@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/ui/logo";
 import { AuthModal } from "@/components/features/auth/auth-modal";
 import { useAuth } from "@/lib/context/auth-context";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 export function Navbar() {
   const { user } = useAuth();
@@ -24,7 +24,7 @@ export function Navbar() {
             <Logo variant="full" height={48} />
           </Link>
 
-          {/* Navigasi Bersih Berdasarkan Role */}
+          {/* Navigasi Tengah Bersih (Tanpa Profil Saya) */}
           <ul className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase font-mono">
             <li><Link href="/" className="hover:text-[#1d3a28] transition-colors">Beranda</Link></li>
             
@@ -32,7 +32,6 @@ export function Navbar() {
               <>
                 <li><Link href="/tools" className="hover:text-[#1d3a28] transition-colors">Sewa Alat</Link></li>
                 <li><Link href="/guides" className="hover:text-[#1d3a28] transition-colors">Pemandu Wisata</Link></li>
-                {user && <li><Link href="/profile" className="hover:text-[#1d3a28] transition-colors">Profil Saya</Link></li>}
               </>
             )}
 
@@ -41,11 +40,16 @@ export function Navbar() {
             {isAdmin && <li><Link href="/admin/dashboard" className="text-rose-700 hover:underline">Dashboard Admin</Link></li>}
           </ul>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {user ? (
               <div className="hidden md:flex items-center">
-                <Link href="/profile" className="text-xs font-bold text-[#1d3a28] bg-emerald-100 hover:bg-emerald-200 px-4 py-2 rounded-sm flex items-center gap-2 transition-colors cursor-pointer border border-emerald-200">
-                  <User className="w-4 h-4" /> {user.name}
+                {/* Avatar Foto Profil sebagai Link ke Halaman Profil */}
+                <Link href="/profile" className="w-9 h-9 rounded-full overflow-hidden border-2 border-stone-300 hover:border-[#1d3a28] transition-colors cursor-pointer shadow-sm">
+                  <img 
+                    src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop"} 
+                    alt="Profil" 
+                    className="w-full h-full object-cover"
+                  />
                 </Link>
               </div>
             ) : (
@@ -69,13 +73,20 @@ export function Navbar() {
                 <>
                   <Link href="/tools" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200">Sewa Alat</Link>
                   <Link href="/guides" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200">Pemandu Wisata</Link>
-                  {user && <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#1d3a28]">Profil Saya</Link>}
                 </>
               )}
               {user?.role === "pemilik" && <Link href="/vendor/pemilik" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Toko</Link>}
               {user?.role === "pemandu" && <Link href="/vendor/pemandu" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Pemandu</Link>}
               {isAdmin && <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-rose-700">Dashboard Admin</Link>}
-              {!user && <button onClick={() => { setIsMobileMenuOpen(false); setIsAuthOpen(true); }} className="block w-full text-left py-3 text-[#1d3a28]">Masuk / Daftar</button>}
+              
+              {user ? (
+                <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[#1d3a28] flex items-center gap-2">
+                  <img src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop"} className="w-6 h-6 rounded-full object-cover border border-stone-300" />
+                  Profil Saya
+                </Link>
+              ) : (
+                <button onClick={() => { setIsMobileMenuOpen(false); setIsAuthOpen(true); }} className="block w-full text-left py-3 text-[#1d3a28]">Masuk / Daftar</button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
