@@ -1,13 +1,13 @@
 ﻿import { createBrowserClient } from "@supabase/ssr";
 
 function getClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  return createBrowserClient(supabaseUrl, supabaseKey);
 }
 
 export async function fetchRealTools() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
   const supabase = getClient();
   const { data, error } = await supabase.from("tools").select("*, vendors(business_name, location, lat, lng)");
   if (error || !data) return [];
@@ -21,6 +21,7 @@ export async function fetchRealTools() {
 }
 
 export async function fetchRealGuides() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
   const supabase = getClient();
   const { data, error } = await supabase.from("guide_profiles").select("*");
   if (error || !data) return [];

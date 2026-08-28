@@ -21,12 +21,12 @@ export interface UserProfile {
 
 interface AuthContextType {
   user: UserProfile | null;
-  registeredUsers: UserProfile[]; // Dikembalikan untuk Admin Dashboard
+  registeredUsers: UserProfile[];
   isLoaded: boolean;
   login: (email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
   register: (profile: Omit<UserProfile, "id" | "status">, pass: string) => Promise<{ success: boolean; message?: string }>;
-  updateAvatar: (avatarUrl: string) => Promise<void>; // Dikembalikan untuk Profile Page
-  approveMitra: (userId: string) => Promise<void>; // Dikembalikan untuk Admin Dashboard
+  updateAvatar: (avatarUrl: string) => Promise<void>;
+  approveMitra: (userId: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -37,12 +37,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Inisialisasi Supabase Client dengan Fallback Aman
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
   const fetchProfile = async (userId: string, email: string) => {
+    if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) {
       setUser({
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const fetchAllUsers = async () => {
+    if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*");
     if (data) {
       setRegisteredUsers(data.map((d: any) => ({
@@ -72,20 +75,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   React.useEffect(() => {
+    if (!supabaseUrl) {
+      console.error("Supabase URL tidak ditemukan! Pastikan file .env.local sudah diisi.");
+      setIsLoaded(true);
+      return;
+    }
+
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email!);
-        if (session.user.email === "admin@gamtara.com") await fetchAllUsers(); // Admin butuh data semua user
+        if (session.user.email === "admin@gamtara.com") await fetchAllUsers();
       }
       setIsLoaded(true);
     };
     checkSession();
-  }, [supabase]);
+  }, [supabase, supabaseUrl]);
 
   const login = async (email: string, pass: string) => {
+    if (!supabaseUrl) return { success: false, message: "Koneksi Database Belum Diatur (.env.local)" };
+
     const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
     if (error) return { success: false, message: error.message };
+    
     if (data.user) {
       await fetchProfile(data.user.id, data.user.email!);
       if (email === "admin@gamtara.com") await fetchAllUsers();
@@ -95,6 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const register = async (profileData: Omit<UserProfile, "id" | "status">, pass: string) => {
+    if (!supabaseUrl) return { success: false, message: "Koneksi Database Belum Diatur (.env.local)" };
+
     const { data: authData, error: authError } = await supabase.auth.signUp({ email: profileData.email, password: pass });
     if (authError) return { success: false, message: authError.message };
 
@@ -111,17 +125,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateAvatar = async (avatarUrl: string) => {
-    if (!user) return;
+    if (!user || !supabaseUrl) return;
     await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
     setUser({ ...user, avatar: avatarUrl });
   };
 
   const approveMitra = async (userId: string) => {
+    if (!supabaseUrl) return;
     await supabase.from("profiles").update({ status: "approved" }).eq("id", userId);
-    await fetchAllUsers(); // Refresh data admin
+    await fetchAllUsers();
   };
 
   const logout = async () => {
+    if (!supabaseUrl) return;
     await supabase.auth.signOut();
     setUser(null);
   };
