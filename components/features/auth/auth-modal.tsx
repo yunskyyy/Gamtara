@@ -26,7 +26,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [password, setPassword] = React.useState("");
   const [confirmPassword, setConfirmPassword] = React.useState("");
   
-  // Syarat Khusus
   const [businessName, setBusinessName] = React.useState("");
   const [idNumber, setIdNumber] = React.useState("");
   const [licenseNumber, setLicenseNumber] = React.useState("");
@@ -42,19 +41,34 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setIsLoading(true);
 
     if (isLogin) {
-      const res = await login(email, password);
-      if (!res.success) setErrorMsg(res.message || "Gagal masuk");
-      else onClose();
-    } else {
-      if (password.length < 6) { setErrorMsg("Kata sandi minimal 6 karakter!"); setIsLoading(false); return; }
-      if (password !== confirmPassword) { setErrorMsg("Konfirmasi kata sandi tidak cocok!"); setIsLoading(false); return; }
-      
-      const res = await register({ name, email, phone, origin, address, gender, role, businessName, idNumber, licenseNumber, languages }, password);
-      if (!res.success) setErrorMsg(res.message || "Gagal mendaftar");
-      else {
-        if (res.message) alert(res.message);
-        onClose();
+      // FIX: login() sekarang mengembalikan boolean
+      const success = await login(email, password);
+      if (!success) {
+        setErrorMsg("Gagal masuk. Periksa kembali email dan kata sandi Anda.");
+        setIsLoading(false);
+        return;
       }
+      onClose();
+    } else {
+      if (password.length < 6) {
+        setErrorMsg("Kata sandi minimal 6 karakter!");
+        setIsLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMsg("Konfirmasi kata sandi tidak cocok!");
+        setIsLoading(false);
+        return;
+      }
+      
+      // FIX: register() sekarang mengembalikan boolean
+      const success = await register({ name, email, phone, origin, address, gender, role }, password);
+      if (!success) {
+        setErrorMsg("Gagal mendaftar. Email mungkin sudah digunakan atau koneksi bermasalah.");
+        setIsLoading(false);
+        return;
+      }
+      onClose();
     }
     setIsLoading(false);
   };
