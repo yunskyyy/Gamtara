@@ -32,3 +32,38 @@ export async function fetchRealGuides() {
     rating: Number(g.rating) || 5.0, completedTours: g.completed_tours || 0, avatar: g.avatar_url,
   }));
 }
+
+// FUNGSI BARU: Tambah Alat Sewa Real ke Database
+export async function addNewTool(vendorId: string, toolData: any, imageFile: File) {
+  const supabase = getClient();
+  
+  // 1. Upload Gambar ke Storage
+  const fileExt = imageFile.name.split('.').pop();
+  const fileName = `tools/${Date.now()}.${fileExt}`;
+  const { error: uploadError } = await supabase.storage.from('gamtara-storage').upload(fileName, imageFile);
+  
+  if (uploadError) return { success: false, message: uploadError.message };
+  
+  const { data: { publicUrl } } = supabase.storage.from('gamtara-storage').getPublicUrl(fileName);
+
+  // 2. Insert Data ke Tabel Tools
+  const { error: insertError } = await supabase.from("tools").insert([{
+    vendor_id: vendorId,
+    name: toolData.name,
+    description: toolData.desc,
+    category: toolData.category,
+    price: toolData.price,
+    stock: toolData.stock,
+    img_url: publicUrl
+  }]);
+
+  if (insertError) return { success: false, message: insertError.message };
+  return { success: true, message: "Alat berhasil ditambahkan!" };
+}
+
+// FUNGSI BARU: Dapatkan Vendor ID berdasarkan Profile ID
+export async function getVendorIdByProfile(profileId: string) {
+  const supabase = getClient();
+  const { data } = await supabase.from("vendors").select("id").eq("profile_id", profileId).single();
+  return data?.id || null;
+}
