@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { useTourism } from "@/lib/context/tourism-context";
 import { Camera, CheckCircle2, MessageSquare, Store, Upload, Plus, Pencil, Trash2, X, ShieldAlert } from "lucide-react";
 import { addNewTool, getVendorIdByProfile } from "@/services/tourism-service";
+import { createBrowserClient } from "@supabase/ssr";
 
 export default function PemilikDashboardPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function PemilikDashboardPage() {
   const [activeTab, setActiveTab] = React.useState<"pesanan" | "katalog">("pesanan");
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [vendorName, setVendorName] = React.useState<string>("");
 
   const [toolName, setToolName] = React.useState("");
   const [toolDesc, setToolDesc] = React.useState("");
@@ -32,7 +34,18 @@ export default function PemilikDashboardPage() {
   const [photoAfter, setPhotoAfter] = React.useState<string | null>(null);
   const [scannedCode, setScannedCode] = React.useState<string | null>(null);
 
-  // Proteksi Akses
+  // Ambil nama toko (business_name) dari Supabase untuk filter pesanan
+  React.useEffect(() => {
+    async function fetchVendorName() {
+      if (user?.id) {
+        const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+        const { data } = await supabase.from("vendors").select("business_name").eq("profile_id", user.id).single();
+        if (data) setVendorName(data.business_name);
+      }
+    }
+    fetchVendorName();
+  }, [user]);
+
   if (isLoaded && (!user || user.role !== "pemilik")) {
     return (
       <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
@@ -47,7 +60,6 @@ export default function PemilikDashboardPage() {
     );
   }
 
-  // Proteksi Status Approval
   if (isLoaded && user?.status === "pending_approval") {
     return (
       <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
@@ -55,15 +67,17 @@ export default function PemilikDashboardPage() {
         <div className="max-w-md mx-auto bg-white p-8 rounded-sm border border-stone-300 shadow-lg mt-12 space-y-4">
           <Store className="w-12 h-12 text-[#c5922e] mx-auto" />
           <h2 className="text-2xl font-extrabold">Menunggu Verifikasi</h2>
-          <p className="text-xs text-stone-600">Akun Mitra Anda sedang dalam proses verifikasi oleh SuperAdmin. Anda baru bisa mengakses Dashboard setelah disetujui.</p>
+          <p className="text-xs text-stone-600">Akun Mitra Anda sedang dalam proses verifikasi oleh SuperAdmin.</p>
           <button onClick={() => router.push("/")} className="bg-[#1d3a28] text-white px-6 py-2.5 rounded-sm font-bold text-xs uppercase tracking-wider cursor-pointer">Kembali ke Beranda</button>
         </div>
       </main>
     );
   }
 
-  const lunasOrders = storeOrders.filter((o) => o.status === "LUNAS" || o.status === "DIGUNAKAN");
-  const myTools = tools.filter((t) => t.ownerName === user?.name);
+  // Filter pesanan berdasarkan nama toko yang login
+  const myOrders = storeOrders.filter((o) => o.ownerName === vendorName);
+  const lunasOrders = myOrders.filter((o) => o.status === "LUNAS" || o.status === "DIGUNAKAN");
+  const myTools = tools.filter((t) => t.ownerName === vendorName);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -92,7 +106,7 @@ export default function PemilikDashboardPage() {
         <div className="border-b border-stone-300 pb-6 flex justify-between items-end">
           <div>
             <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// DASHBOARD OPERASIONAL TOKO ALAT</span>
-            <h1 className="text-4xl font-extrabold tracking-tight mt-1">Portal {user?.name || "Pemilik Barang"}</h1>
+            <h1 className="text-4xl font-extrabold tracking-tight mt-1">Portal {vendorName || "Pemilik Barang"}</h1>
           </div>
           <div className="flex gap-2">
             <button onClick={() => setActiveTab("pesanan")} className={`px-4 py-2 font-mono text-xs font-bold uppercase rounded-sm border ${activeTab === "pesanan" ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-white text-stone-700 border-stone-300"}`}>Pesanan Masuk</button>
@@ -100,7 +114,6 @@ export default function PemilikDashboardPage() {
           </div>
         </div>
 
-        {/* Konten Dashboard (Sama seperti sebelumnya) */}
         {activeTab === "pesanan" && (
           <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-4">
             <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-[#1d3a28] border-b border-stone-200 pb-2 flex items-center gap-2">

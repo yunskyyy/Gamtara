@@ -1,18 +1,22 @@
 ﻿"use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBooking } from "@/lib/context/booking-context";
 import { ShoppingBag, ArrowRight, Trash2, X, ChevronUp, ChevronDown } from "lucide-react";
 
 export function FloatingCartBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const { selectedTools, toggleTool, totalPrice, clearBooking } = useBooking();
   const [isExpanded, setIsExpanded] = React.useState(true);
+  
   const hasItems = selectedTools.length > 0;
+  const isCheckoutPage = pathname === "/checkout";
 
-  if (!hasItems) return null;
+  // Sembunyikan keranjang jika kosong ATAU sedang berada di halaman checkout
+  if (!hasItems || isCheckoutPage) return null;
 
   return (
     <AnimatePresence>
