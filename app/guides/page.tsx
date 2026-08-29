@@ -31,9 +31,19 @@ export default function GuidesCatalogPage() {
     setChosenSpot(guide.specialtySpots[0]);
   };
 
+  // FIX: Fungsi ini yang sebelumnya gagal merespons
   const handleConfirmRequest = () => {
     if (!requestTargetGuide || !chosenSpot) return;
-    createGuideRequest({ id: requestTargetGuide.id, name: requestTargetGuide.name, price: requestTargetGuide.price, avatar: requestTargetGuide.avatar }, chosenSpot, user?.name || "Wisatawan", "15 Juni 2025");
+    
+    // Panggil fungsi dari context untuk menyimpan permintaan
+    createGuideRequest(
+      { id: requestTargetGuide.id, name: requestTargetGuide.name, price: requestTargetGuide.price, avatar: requestTargetGuide.avatar }, 
+      chosenSpot, 
+      user?.name || "Wisatawan", 
+      "15 Juni 2025"
+    );
+    
+    // Tutup modal pilihan destinasi dan buka modal riwayat
     setRequestTargetGuide(null);
     setChosenSpot("");
     setIsHistoryOpen(true);
@@ -110,7 +120,65 @@ export default function GuidesCatalogPage() {
         )}
       </div>
 
-      {/* Modals omitted for brevity, logic remains identical */}
+      {/* Modal Pilih Destinasi */}
+      {requestTargetGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+          <div className="bg-[#f4f2eb] p-8 max-w-md w-full border border-stone-300 shadow-2xl space-y-6 rounded-sm">
+            <div>
+              <h3 className="font-extrabold text-xl text-stone-900 mb-1">Pilih Destinasi Pendampingan</h3>
+              <p className="text-sm text-stone-600 font-light">Pemandu <strong>{requestTargetGuide.name}</strong> ahli di lokasi berikut:</p>
+            </div>
+            <select value={chosenSpot} onChange={(e) => setChosenSpot(e.target.value)} className="w-full p-3.5 bg-white border border-stone-300 text-sm font-bold text-stone-800 focus:outline-none focus:border-[#1d3a28] rounded-sm">
+              {requestTargetGuide.specialtySpots.map((spot) => (<option key={spot} value={spot}>{spot}</option>))}
+            </select>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setRequestTargetGuide(null)} className="flex-1 py-3 bg-transparent border border-stone-800 text-stone-900 font-bold text-xs uppercase tracking-widest cursor-pointer hover:bg-stone-200 transition-colors rounded-sm">Batal</button>
+              <button onClick={handleConfirmRequest} className="flex-1 py-3 bg-[#1d3a28] text-white font-bold text-xs uppercase tracking-widest cursor-pointer hover:bg-[#152a1b] transition-colors rounded-sm">Kirim Permintaan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Riwayat Permintaan */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+          <div className="bg-[#f4f2eb] p-8 max-w-xl w-full border border-stone-300 shadow-2xl space-y-6 rounded-sm">
+            <div className="flex justify-between items-center border-b-2 border-stone-300 pb-4">
+              <h3 className="font-extrabold text-lg uppercase tracking-widest text-stone-900">Riwayat Permintaan</h3>
+              <button onClick={() => setIsHistoryOpen(false)} className="text-stone-500 hover:text-stone-900 cursor-pointer font-mono text-[10px] font-bold uppercase tracking-widest flex items-center gap-1">
+                TUTUP <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            {guideRequests.length === 0 ? (
+              <div className="py-12 text-center">
+                <p className="text-xl text-stone-500 italic">Belum ada permintaan yang dikirim.</p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-72 overflow-y-auto pr-2">
+                {guideRequests.map((req) => (
+                  <div key={req.id} className="p-4 bg-white border border-stone-300 flex justify-between items-center rounded-sm">
+                    <div>
+                      <p className="font-extrabold text-stone-900 text-base mb-0.5">{req.guideName}</p>
+                      <p className="text-xs text-stone-500 font-mono mb-2">Destinasi: {req.selectedDestination}</p>
+                      <span className="inline-block px-2.5 py-1 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold uppercase tracking-wider border border-amber-200 rounded-sm">
+                        {req.status === "MENUNGGU" ? "Menunggu Konfirmasi" : req.status}
+                      </span>
+                    </div>
+                    {req.status === "MENUNGGU" && (
+                      <button onClick={() => cancelGuideRequest(req.id)} className="px-4 py-2 bg-transparent border border-rose-600 text-rose-600 hover:bg-rose-50 text-[10px] font-bold uppercase tracking-widest cursor-pointer transition-colors rounded-sm">
+                        Batalkan
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <MediaPreviewModal data={previewData} onClose={() => setPreviewData(null)} />
       <AuthPromptModal isOpen={isPromptOpen} onClose={() => setIsPromptOpen(false)} onOpenAuth={() => {}} actionText="meminta pemandu wisata" />
     </main>
   );
