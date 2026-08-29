@@ -39,7 +39,6 @@ export default function CheckoutPage() {
       setIsPaid(false);
       
       if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-        // FIX: Kirim user.id ke fungsi completeCheckout
         completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "");
         router.push("/profile");
       }
@@ -69,81 +68,106 @@ export default function CheckoutPage() {
           <p className="text-sm text-stone-600 mt-2">Pesanan Anda dipisahkan berdasarkan Toko Pemilik Barang. Lakukan pembayaran untuk masing-masing toko.</p>
         </div>
 
-        <div className="space-y-8">
-          {Object.entries(groupedOrders).map(([vendorName, items]) => {
-            const isVendorPaid = paidVendors.includes(vendorName);
-            const deliveryType = deliveryOptions[vendorName] || "pickup";
-            const itemsTotal = items.reduce((sum, i) => sum + i.price, 0);
-            const shippingFee = deliveryType === "delivery" ? 15000 : 0;
-            const grandTotal = itemsTotal + shippingFee;
-
-            return (
-              <div key={vendorName} className={`bg-white border rounded-sm p-6 shadow-sm ${isVendorPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
-                <div className="flex justify-between items-center border-b border-stone-200 pb-4 mb-4">
-                  <h3 className="font-bold text-lg flex items-center gap-2 text-[#1d3a28]">
-                    <Store className="w-5 h-5" /> {vendorName}
-                  </h3>
-                  {isVendorPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div className="md:col-span-7 space-y-6">
+            {/* FIX: Form Pemilihan Tanggal Sewa */}
+            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
+              <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#1d3a28]" /> Tanggal Sewa Pelaksanaan
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                <div>
+                  <label className="block text-stone-500 mb-1">Mulai Sewa</label>
+                  <input type="date" min={today} value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-xs font-mono font-bold text-stone-500 mb-2 uppercase">Daftar Barang:</h4>
-                      <ul className="space-y-2">
-                        {items.map((item) => (
-                          <li key={item.id} className="flex justify-between text-sm font-bold text-stone-800">
-                            <span>{item.name}</span>
-                            <span>Rp {item.price.toLocaleString("id-ID")}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {!isVendorPaid && (
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
-                        <div className="flex gap-4">
-                          <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
-                            <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko (Gratis)
-                          </label>
-                          <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
-                            <Truck className="w-4 h-4 text-stone-600" /> Diantar (Rp 15.000)
-                          </label>
-                        </div>
-                        
-                        {deliveryType === "delivery" && (
-                          <input type="text" placeholder="Masukkan alamat pengantaran lengkap..." value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm text-xs mt-2" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-[#f9f8f3] p-5 rounded-sm border border-stone-200 flex flex-col justify-between">
-                    <div className="space-y-2 text-sm mb-6">
-                      <div className="flex justify-between text-stone-600"><span>Subtotal Alat:</span><span>Rp {itemsTotal.toLocaleString("id-ID")}</span></div>
-                      <div className="flex justify-between text-stone-600"><span>Ongkos Kirim:</span><span>Rp {shippingFee.toLocaleString("id-ID")}</span></div>
-                      <div className="flex justify-between font-extrabold text-lg text-[#1d3a28] pt-2 border-t border-stone-300">
-                        <span>Total Bayar:</span><span>Rp {grandTotal.toLocaleString("id-ID")}</span>
-                      </div>
-                    </div>
-
-                    {!isVendorPaid ? (
-                      <button onClick={() => setPayingVendor(vendorName)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md">
-                        <QrCode className="w-4 h-4 text-[#c5922e]" /> Bayar Pesanan Ini
-                      </button>
-                    ) : (
-                      <button disabled className="w-full py-3 bg-stone-200 text-stone-500 font-bold uppercase tracking-wider rounded-sm cursor-not-allowed flex items-center justify-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" /> Pesanan Lunas
-                      </button>
-                    )}
-                  </div>
+                <div>
+                  <label className="block text-stone-500 mb-1">Selesai Sewa</label>
+                  <input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
                 </div>
               </div>
-            );
-          })}
+            </div>
+
+            <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
+              <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-[#1d3a28]" /> Titik Jemput / Pickup Point
+              </h3>
+              <input type="text" value={meetingPoint} onChange={(e) => setMeetingPoint(e.target.value)} className="w-full p-3 bg-[#f4f2eb] border border-stone-300 rounded-sm text-xs font-sans" />
+              <p className="text-[11px] text-stone-500">Alat dapat diambil langsung di toko pemilik atau diantar ke titik temu.</p>
+            </div>
+          </div>
+
+          <div className="md:col-span-5">
+            <div className="space-y-8">
+              {Object.entries(groupedOrders).map(([vendorName, items]) => {
+                const isVendorPaid = paidVendors.includes(vendorName);
+                const deliveryType = deliveryOptions[vendorName] || "pickup";
+                const itemsTotal = items.reduce((sum, i) => sum + i.price, 0);
+                const shippingFee = deliveryType === "delivery" ? 15000 : 0;
+                const grandTotal = itemsTotal + shippingFee;
+
+                return (
+                  <div key={vendorName} className={`bg-white border rounded-sm p-6 shadow-sm ${isVendorPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
+                    <div className="flex justify-between items-center border-b border-stone-200 pb-4 mb-4">
+                      <h3 className="font-bold text-lg flex items-center gap-2 text-[#1d3a28]">
+                        <Store className="w-5 h-5" /> {vendorName}
+                      </h3>
+                      {isVendorPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <h4 className="text-xs font-mono font-bold text-stone-500 mb-2 uppercase">Daftar Barang:</h4>
+                        <ul className="space-y-2">
+                          {items.map((item) => (
+                            <li key={item.id} className="flex justify-between text-sm font-bold text-stone-800">
+                              <span>{item.name}</span>
+                              <span>Rp {item.price.toLocaleString("id-ID")}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {!isVendorPaid && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
+                          <div className="flex gap-4">
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
+                              <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko (Gratis)
+                            </label>
+                            <label className="flex items-center gap-2 text-sm cursor-pointer">
+                              <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
+                              <Truck className="w-4 h-4 text-stone-600" /> Diantar (Rp 15.000)
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="bg-[#f9f8f3] p-5 rounded-sm border border-stone-200 flex flex-col justify-between">
+                        <div className="space-y-2 text-sm mb-6">
+                          <div className="flex justify-between text-stone-600"><span>Subtotal Alat:</span><span>Rp {itemsTotal.toLocaleString("id-ID")}</span></div>
+                          <div className="flex justify-between text-stone-600"><span>Ongkos Kirim:</span><span>Rp {shippingFee.toLocaleString("id-ID")}</span></div>
+                          <div className="flex justify-between font-extrabold text-lg text-[#1d3a28] pt-2 border-t border-stone-300">
+                            <span>Total Bayar:</span><span>Rp {grandTotal.toLocaleString("id-ID")}</span>
+                          </div>
+                        </div>
+
+                        {!isVendorPaid ? (
+                          <button onClick={() => setPayingVendor(vendorName)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-sm transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md">
+                            <QrCode className="w-4 h-4 text-[#c5922e]" /> Bayar Pesanan Ini
+                          </button>
+                        ) : (
+                          <button disabled className="w-full py-3 bg-stone-200 text-stone-500 font-bold uppercase tracking-wider rounded-sm cursor-not-allowed flex items-center justify-center gap-2">
+                            <CheckCircle2 className="w-4 h-4" /> Pesanan Lunas
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {payingVendor && (

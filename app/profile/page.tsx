@@ -60,8 +60,12 @@ export default function ProfilePage() {
     alert("Pembayaran Pemandu Berhasil! Sesi Room Chat Telah Terbuka.");
   };
 
-  // FIX: Filter Sengketa yang disetujui Admin untuk user ini
   const myDisputes = disputes.filter(d => d.clientName === user.name && d.status === "DISETUJUI");
+
+  // FIX: Kategorisasi Riwayat Pesanan
+  const activeOrders = storeOrders.filter(o => o.status === "LUNAS" || o.status === "DIGUNAKAN");
+  const completedOrders = storeOrders.filter(o => o.status === "SELESAI");
+  const disputeOrders = storeOrders.filter(o => o.status === "SENGKETA");
 
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
@@ -78,7 +82,6 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* FIX: Notifikasi Tagihan Ganti Rugi (Jika ada sengketa disetujui) */}
         {myDisputes.length > 0 && (
           <div className="bg-rose-100 border border-rose-300 rounded-sm p-6 flex items-start gap-4 shadow-sm">
             <AlertTriangle className="w-8 h-8 text-rose-600 shrink-0" />
@@ -124,27 +127,63 @@ export default function ProfilePage() {
           <div className="md:col-span-8 space-y-6">
             {user.role === "customer" && (
               <>
-                <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-4">
+                {/* FIX: Kategorisasi Riwayat Pesanan */}
+                <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-6">
                   <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-3 flex items-center gap-2">
                     <Store className="w-4 h-4 text-[#1d3a28]" /> Riwayat Pesanan Alat Sewa
                   </h3>
-                  {storeOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono py-2">Belum ada pesanan alat sewa.</p> : storeOrders.map((ord) => (
-                    <div key={ord.orderId} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm space-y-2 text-xs">
-                      <div className="flex justify-between items-center border-b border-stone-300 pb-2">
-                        <span className="font-mono font-bold text-[#1d3a28]">{ord.orderId} — {ord.ownerName}</span>
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">{ord.status}</span>
-                      </div>
-                      <p className="text-stone-600"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
-                      <p className="text-stone-600 font-mono"><strong>Jadwal:</strong> {ord.startDate} s/d {ord.endDate}</p>
-                      <div className="flex justify-between items-center pt-2 gap-2">
-                        <span className="font-bold text-[#1d3a28] font-mono">Total: Rp {ord.totalPrice.toLocaleString("id-ID")}</span>
-                        <div className="flex gap-2">
-                          <Link href={`/chat/${ord.orderId}`} className="px-3 py-1.5 bg-white border border-stone-800 text-stone-900 text-[11px] font-bold uppercase rounded-sm flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Chat Toko</Link>
-                          <Link href="/ticket/TRX-GAMTARA-7890" className="px-3 py-1.5 bg-[#1d3a28] text-white text-[11px] font-bold uppercase rounded-sm flex items-center gap-1"><Ticket className="w-3 h-3" /> Tiket QR</Link>
+
+                  {/* Pesanan Aktif */}
+                  <div>
+                    <h4 className="font-bold text-xs text-[#1d3a28] mb-3">PESANAN AKTIF (LUNAS / DIGUNAKAN)</h4>
+                    {activeOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan aktif.</p> : activeOrders.map((ord) => (
+                      <div key={ord.orderId} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm space-y-2 text-xs mb-3">
+                        <div className="flex justify-between items-center border-b border-stone-300 pb-2">
+                          <span className="font-mono font-bold text-[#1d3a28]">{ord.orderId} — {ord.ownerName}</span>
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">{ord.status}</span>
+                        </div>
+                        <p className="text-stone-600"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                        <p className="text-stone-600 font-mono"><strong>Jadwal:</strong> {ord.startDate} s/d {ord.endDate}</p>
+                        <div className="flex justify-between items-center pt-2 gap-2">
+                          <span className="font-bold text-[#1d3a28] font-mono">Total: Rp {ord.totalPrice.toLocaleString("id-ID")}</span>
+                          <div className="flex gap-2">
+                            <Link href={`/chat/${ord.orderId}`} className="px-3 py-1.5 bg-white border border-stone-800 text-stone-900 text-[11px] font-bold uppercase rounded-sm flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Chat Toko</Link>
+                            <Link href="/ticket/TRX-GAMTARA-7890" className="px-3 py-1.5 bg-[#1d3a28] text-white text-[11px] font-bold uppercase rounded-sm flex items-center gap-1"><Ticket className="w-3 h-3" /> Tiket QR</Link>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Pesanan Selesai */}
+                  <div>
+                    <h4 className="font-bold text-xs text-stone-600 mb-3">PESANAN SELESAI</h4>
+                    {completedOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan selesai.</p> : completedOrders.map((ord) => (
+                      <div key={ord.orderId} className="p-4 bg-stone-100 border border-stone-200 rounded-sm space-y-2 text-xs mb-3 opacity-75">
+                        <div className="flex justify-between items-center border-b border-stone-200 pb-2">
+                          <span className="font-mono font-bold text-stone-600">{ord.orderId} — {ord.ownerName}</span>
+                          <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[10px] font-bold uppercase">{ord.status}</span>
+                        </div>
+                        <p className="text-stone-500"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pesanan Sengketa */}
+                  {disputeOrders.length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-xs text-rose-600 mb-3">PESANAN DALAM SENGKETA</h4>
+                      {disputeOrders.map((ord) => (
+                        <div key={ord.orderId} className="p-4 bg-rose-50 border border-rose-200 rounded-sm space-y-2 text-xs mb-3">
+                          <div className="flex justify-between items-center border-b border-rose-200 pb-2">
+                            <span className="font-mono font-bold text-rose-700">{ord.orderId} — {ord.ownerName}</span>
+                            <span className="px-2 py-0.5 bg-rose-200 text-rose-800 text-[10px] font-bold uppercase">{ord.status}</span>
+                          </div>
+                          <p className="text-rose-700"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
 
                 <div className="bg-white border border-stone-300 rounded-sm p-6 space-y-4">
