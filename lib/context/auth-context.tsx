@@ -33,7 +33,6 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-// Default Avatar Berdasarkan Gender
 const DEFAULT_AVATAR_MALE = "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg";
 const DEFAULT_AVATAR_FEMALE = "https://i.pinimg.com/736x/1c/54/f7/1c54f7b06d7723c21afc5035bf88a5ef.jpg";
 
@@ -132,9 +131,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // 2. Insert ke Vendors (Jika Pemilik/Pemandu)
       if (profileData.role === "pemilik" || profileData.role === "pemandu") {
         const vType = profileData.role === "pemilik" ? "tool_provider" : "tour_guide";
-        const bName = profileData.role === "pemilik" ? profileData.businessName : profileData.name;
         
-        // FIX: Pastikan lat/lng dikirim agar tidak error jika DB mewajibkan
+        // FIX: Pastikan membaca variabel businessName dari form, jika kosong gunakan nama user
+        const bName = profileData.role === "pemilik" ? (profileData.businessName || profileData.name) : profileData.name;
+        
         const { data: vendorData, error: vendorError } = await supabase.from("vendors").insert([{ 
           profile_id: authData.user.id, vendor_type: vType, business_name: bName, location: profileData.origin, lat: 0.7893, lng: 127.3871
         }]).select("id").single();
@@ -143,9 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // 3. Insert ke Guide Profiles (Jika Pemandu)
         if (profileData.role === "pemandu" && vendorData) {
-          // FIX: Gunakan array JavaScript asli untuk specialty_spots
+          // FIX: Pastikan membaca variabel languages dari form, jika kosong gunakan default
+          const langs = profileData.languages || "Bahasa Indonesia";
+          
           const { error: guideError } = await supabase.from("guide_profiles").insert([{ 
-            vendor_id: vendorData.id, full_name: profileData.name, languages: profileData.languages, 
+            vendor_id: vendorData.id, full_name: profileData.name, languages: langs, 
             specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: defaultAvatar 
           }]);
           if (guideError) { console.error("Guide Insert Error:", guideError); }
