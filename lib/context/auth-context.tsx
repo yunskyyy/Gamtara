@@ -33,8 +33,9 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-// Default Avatar Icon (Orang Setengah Badan)
-const DEFAULT_AVATAR = "https://ui-avatars.com/api/?name=User&background=e2e8f0&color=64748b&rounded=true&size=128";
+// Default Avatar Berdasarkan Gender
+const DEFAULT_AVATAR_MALE = "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg";
+const DEFAULT_AVATAR_FEMALE = "https://i.pinimg.com/736x/1c/54/f7/1c54f7b06d7723c21afc5035bf88a5ef.jpg";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
@@ -57,11 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) {
+      const defaultAvatar = data.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
       setUser({
         id: data.id, name: data.full_name, email: email, phone: data.phone || "",
         origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
         role: data.role as UserRole, status: data.status as AccountStatus || "approved", 
-        avatar: data.avatar_url || DEFAULT_AVATAR,
+        avatar: data.avatar_url || defaultAvatar,
       });
     }
   };
@@ -70,12 +72,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*");
     if (data) {
-      setRegisteredUsers(data.map((d: any) => ({
-        id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
-        origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
-        role: d.role as UserRole, status: d.status as AccountStatus || "approved", 
-        avatar: d.avatar_url || DEFAULT_AVATAR
-      })));
+      setRegisteredUsers(data.map((d: any) => {
+        const defaultAvatar = d.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
+        return {
+          id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
+          origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
+          role: d.role as UserRole, status: d.status as AccountStatus || "approved", 
+          avatar: d.avatar_url || defaultAvatar
+        };
+      }));
     }
   };
 
@@ -107,34 +112,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = async (profileData: any, pass: string) => {
     if (!supabaseUrl) { showToast("Koneksi Database Belum Diatur", "error"); return false; }
+    
     const { data: authData, error: authError } = await supabase.auth.signUp({ email: profileData.email, password: pass });
     if (authError) { showToast(authError.message, "error"); return false; }
 
     if (authData.user) {
       const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
+      const defaultAvatar = profileData.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
       
       // 1. Insert ke Profiles
-      await supabase.from("profiles").insert([{
+      const { error: profileError } = await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
-        origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus
+        origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus,
+        avatar_url: defaultAvatar
       }]);
+
+      if (profileError) { showToast("Gagal menyimpan profil: " + profileError.message, "error"); return false; }
 
       // 2. Insert ke Vendors (Jika Pemilik/Pemandu)
       if (profileData.role === "pemilik" || profileData.role === "pemandu") {
         const vType = profileData.role === "pemilik" ? "tool_provider" : "tour_guide";
         const bName = profileData.role === "pemilik" ? profileData.businessName : profileData.name;
         
-        const { data: vendorData } = await supabase.from("vendors").insert([{ 
-          profile_id: authData.user.id, vendor_type: vType, business_name: bName, location: profileData.origin 
+        // FIX: Pastikan lat/lng dikirim agar tidak error jika DB mewajibkan
+        const { data: vendorData, error: vendorError } = await supabase.from("vendors").insert([{ 
+          profile_id: authData.user.id, vendor_type: vType, business_name: bName, location: profileData.origin, lat: 0.7893, lng: 127.3871
         }]).select("id").single();
 
-        // 3. FIX: Insert ke Guide Profiles (Format Array PostgreSQL yang Benar)
+        if (vendorError) { console.error("Vendor Insert Error:", vendorError); }
+
+        // 3. Insert ke Guide Profiles (Jika Pemandu)
         if (profileData.role === "pemandu" && vendorData) {
-          await supabase.from("guide_profiles").insert([{ 
+          // FIX: Gunakan array JavaScript asli untuk specialty_spots
+          const { error: guideError } = await supabase.from("guide_profiles").insert([{ 
             vendor_id: vendorData.id, full_name: profileData.name, languages: profileData.languages, 
-            specialty_spots: `{${profileData.origin}}`, // Format Array PostgreSQL
-            rate_per_day: 150000, avatar_url: DEFAULT_AVATAR 
+            specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: defaultAvatar 
           }]);
+          if (guideError) { console.error("Guide Insert Error:", guideError); }
         }
       }
 
@@ -145,11 +159,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return false;
   };
 
-  // FIX: Update Avatar Realtime
   const updateAvatar = async (avatarUrl: string) => {
     if (!user || !supabaseUrl) return;
     await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
-    setUser((prev) => prev ? { ...prev, avatar: avatarUrl } : null); // Paksa re-render state
+    setUser((prev) => prev ? { ...prev, avatar: avatarUrl } : null);
     showToast("Foto profil diperbarui!", "success");
   };
 
