@@ -12,7 +12,7 @@ import { createBrowserClient } from "@supabase/ssr";
 export default function ProfilePage() {
   const router = useRouter();
   const { user, updateAvatar, logout } = useAuth();
-  const { storeOrders, guideRequests, payGuideRequest } = useBooking();
+  const { storeOrders, guideRequests, disputes, payGuideRequest } = useBooking();
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [payingReqId, setPayingReqId] = React.useState<string | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -53,6 +53,16 @@ export default function ProfilePage() {
     router.push("/");
   };
 
+  const handleConfirmPayGuide = () => {
+    if (!payingReqId) return;
+    payGuideRequest(payingReqId);
+    setPayingReqId(null);
+    alert("Pembayaran Pemandu Berhasil! Sesi Room Chat Telah Terbuka.");
+  };
+
+  // FIX: Filter Sengketa yang disetujui Admin untuk user ini
+  const myDisputes = disputes.filter(d => d.clientName === user.name && d.status === "DISETUJUI");
+
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
       <Navbar />
@@ -67,6 +77,24 @@ export default function ProfilePage() {
             <LogOut className="w-4 h-4" /> Keluar
           </button>
         </div>
+
+        {/* FIX: Notifikasi Tagihan Ganti Rugi (Jika ada sengketa disetujui) */}
+        {myDisputes.length > 0 && (
+          <div className="bg-rose-100 border border-rose-300 rounded-sm p-6 flex items-start gap-4 shadow-sm">
+            <AlertTriangle className="w-8 h-8 text-rose-600 shrink-0" />
+            <div>
+              <h3 className="font-extrabold text-rose-800 text-lg mb-1">Tagihan Ganti Rugi Kerusakan Alat</h3>
+              <p className="text-sm text-rose-700 mb-3">SuperAdmin telah menyetujui klaim kerusakan alat dari pihak toko. Dana deposit Anda akan dipotong, atau Anda diwajibkan membayar tagihan berikut:</p>
+              <ul className="space-y-2">
+                {myDisputes.map(d => (
+                  <li key={d.id} className="text-xs font-mono bg-white p-3 rounded border border-rose-200">
+                    <strong>{d.itemName}</strong> ({d.ownerName}) — Tagihan: <span className="text-rose-600 font-bold">Rp {d.claimAmount.toLocaleString("id-ID")}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-4 bg-white border border-stone-300 rounded-sm p-6 text-center space-y-4">
@@ -152,13 +180,10 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Modal Konfirmasi Logout */}
         {isLogoutModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
             <div className="bg-[#f4f2eb] p-8 rounded-sm max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
-              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-2 border border-rose-200">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-2 border border-rose-200"><AlertTriangle className="w-6 h-6" /></div>
               <h3 className="font-extrabold text-lg text-stone-900">Konfirmasi Keluar</h3>
               <p className="text-xs text-stone-600">Apakah Anda yakin ingin keluar dari akun GAMTARA?</p>
               <div className="flex gap-3 pt-2">
@@ -169,6 +194,22 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {payingReqId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
+            <div className="bg-[#f4f2eb] p-8 rounded-sm max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
+              <div className="flex justify-between items-center border-b border-stone-300 pb-2">
+                <h3 className="font-extrabold text-sm uppercase font-mono">BAYAR JASA PEMANDU</h3>
+                <button onClick={() => setPayingReqId(null)} className="cursor-pointer"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="bg-white p-4 border border-stone-300 rounded-sm inline-block">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-GUIDE-PAYMENT" alt="QRIS Code" className="w-44 h-44 mx-auto" />
+              </div>
+              <button onClick={handleConfirmPayGuide} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-sm font-mono text-xs uppercase font-bold tracking-wider cursor-pointer shadow-md">
+                Simulasi Bayar Sekarang
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

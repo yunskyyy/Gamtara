@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { useTourism, GuideItem } from "@/lib/context/tourism-context";
 import { MediaPreviewModal, PreviewData } from "@/components/ui/media-preview-modal";
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal";
-import { CheckCircle2, Clock, MapPin, Send, Eye, X, ListOrdered } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, Send, Eye, X, ListOrdered, Calendar } from "lucide-react";
 
 const specialtySpots = ["Semua Tempat", "Pantai Sulamadaha", "Gunung Gamalama", "Pulau Maitara", "Benteng Tolukko", "Batu Angus", "Danau Ngade"];
 
@@ -19,7 +19,11 @@ export default function GuidesCatalogPage() {
   const [selectedSpot, setSelectedSpot] = React.useState("Semua Tempat");
   const [previewData, setPreviewData] = React.useState<PreviewData | null>(null);
   const [requestTargetGuide, setRequestTargetGuide] = React.useState<GuideItem | null>(null);
+  
+  // FIX: Tambahkan state untuk Tanggal Dampingan
   const [chosenSpot, setChosenSpot] = React.useState<string>("");
+  const [chosenDate, setChosenDate] = React.useState<string>(new Date().toISOString().split('T')[0]);
+  
   const [isHistoryOpen, setIsHistoryOpen] = React.useState(false);
   const [isPromptOpen, setIsPromptOpen] = React.useState(false);
 
@@ -31,26 +35,21 @@ export default function GuidesCatalogPage() {
     setChosenSpot(guide.specialtySpots[0]);
   };
 
-  // FIX: Fungsi ini yang sebelumnya gagal merespons
   const handleConfirmRequest = () => {
-    if (!requestTargetGuide || !chosenSpot) return;
-    
-    // Panggil fungsi dari context untuk menyimpan permintaan
+    if (!requestTargetGuide || !chosenSpot || !chosenDate) return;
     createGuideRequest(
       { id: requestTargetGuide.id, name: requestTargetGuide.name, price: requestTargetGuide.price, avatar: requestTargetGuide.avatar }, 
       chosenSpot, 
       user?.name || "Wisatawan", 
-      "15 Juni 2025"
+      chosenDate // FIX: Kirim tanggal yang dipilih
     );
-    
-    // Tutup modal pilihan destinasi dan buka modal riwayat
     setRequestTargetGuide(null);
     setChosenSpot("");
     setIsHistoryOpen(true);
   };
 
   return (
-    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900">
+    <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
       <Navbar />
       <FloatingCartBar />
 
@@ -120,17 +119,28 @@ export default function GuidesCatalogPage() {
         )}
       </div>
 
-      {/* Modal Pilih Destinasi */}
+      {/* FIX: Modal Pilih Destinasi & Tanggal */}
       {requestTargetGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
           <div className="bg-[#f4f2eb] p-8 max-w-md w-full border border-stone-300 shadow-2xl space-y-6 rounded-sm">
             <div>
-              <h3 className="font-extrabold text-xl text-stone-900 mb-1">Pilih Destinasi Pendampingan</h3>
-              <p className="text-sm text-stone-600 font-light">Pemandu <strong>{requestTargetGuide.name}</strong> ahli di lokasi berikut:</p>
+              <h3 className="font-extrabold text-xl text-stone-900 mb-1">Detail Permintaan Dampingan</h3>
+              <p className="text-sm text-stone-600 font-light">Pemandu <strong>{requestTargetGuide.name}</strong></p>
             </div>
-            <select value={chosenSpot} onChange={(e) => setChosenSpot(e.target.value)} className="w-full p-3.5 bg-white border border-stone-300 text-sm font-bold text-stone-800 focus:outline-none focus:border-[#1d3a28] rounded-sm">
-              {requestTargetGuide.specialtySpots.map((spot) => (<option key={spot} value={spot}>{spot}</option>))}
-            </select>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1">Pilih Destinasi</label>
+                <select value={chosenSpot} onChange={(e) => setChosenSpot(e.target.value)} className="w-full p-3 bg-white border border-stone-300 text-sm font-bold text-stone-800 focus:outline-none focus:border-[#1d3a28] rounded-sm">
+                  {requestTargetGuide.specialtySpots.map((spot) => (<option key={spot} value={spot}>{spot}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-stone-700 mb-1 flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/> Tanggal Pelaksanaan</label>
+                <input type="date" min={new Date().toISOString().split('T')[0]} value={chosenDate} onChange={(e) => setChosenDate(e.target.value)} className="w-full p-3 bg-white border border-stone-300 text-sm font-bold text-stone-800 focus:outline-none focus:border-[#1d3a28] rounded-sm" />
+              </div>
+            </div>
+
             <div className="flex gap-3 pt-2">
               <button onClick={() => setRequestTargetGuide(null)} className="flex-1 py-3 bg-transparent border border-stone-800 text-stone-900 font-bold text-xs uppercase tracking-widest cursor-pointer hover:bg-stone-200 transition-colors rounded-sm">Batal</button>
               <button onClick={handleConfirmRequest} className="flex-1 py-3 bg-[#1d3a28] text-white font-bold text-xs uppercase tracking-widest cursor-pointer hover:bg-[#152a1b] transition-colors rounded-sm">Kirim Permintaan</button>
@@ -160,7 +170,7 @@ export default function GuidesCatalogPage() {
                   <div key={req.id} className="p-4 bg-white border border-stone-300 flex justify-between items-center rounded-sm">
                     <div>
                       <p className="font-extrabold text-stone-900 text-base mb-0.5">{req.guideName}</p>
-                      <p className="text-xs text-stone-500 font-mono mb-2">Destinasi: {req.selectedDestination}</p>
+                      <p className="text-xs text-stone-500 font-mono mb-2">Destinasi: {req.selectedDestination} • Tgl: {req.tourDate}</p>
                       <span className="inline-block px-2.5 py-1 bg-amber-100 text-amber-800 font-mono text-[10px] font-bold uppercase tracking-wider border border-amber-200 rounded-sm">
                         {req.status === "MENUNGGU" ? "Menunggu Konfirmasi" : req.status}
                       </span>

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import * as React from "react";
+import { createBrowserClient } from "@supabase/ssr";
 
 export interface ToolOrderItem { id: string; name: string; price: number; ownerName: string; img: string; }
 export interface StoreOrderGroup { orderId: string; ownerName: string; clientName: string; items: ToolOrderItem[]; totalPrice: number; startDate: string; endDate: string; status: "LUNAS" | "DIGUNAKAN" | "SELESAI" | "SENGKETA"; photoBefore?: string; photoAfter?: string; }
@@ -41,7 +42,10 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const [payouts, setPayouts] = React.useState<PayoutItem[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
 
-  // Load from LocalStorage
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+
   React.useEffect(() => {
     const loadState = () => {
       const db = localStorage.getItem("gamtara_db");
@@ -56,31 +60,21 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
       }
       setIsLoaded(true);
     };
-
     loadState();
-
-    // Auto Refresh Polling (Realtime Simulation Every 3 seconds)
-    const interval = setInterval(() => {
-      loadState();
-    }, 3000);
-
+    const interval = setInterval(() => loadState(), 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Save to LocalStorage whenever state changes
   React.useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem("gamtara_db", JSON.stringify({
-        selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts
-      }));
+      localStorage.setItem("gamtara_db", JSON.stringify({ selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts }));
     }
   }, [selectedTools, storeOrders, guideRequests, chatMessages, disputes, payouts, isLoaded]);
 
   const toggleTool = (tool: ToolOrderItem) => setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);
   const clearBooking = () => setSelectedTools([]);
 
-  const completeCheckout = (startDate: string, endDate: string, clientName: string) => {
-    // MULTI VENDOR GROUPING LOGIC
+  const completeCheckout = async (startDate: string, endDate: string, clientName: string) => {
     const grouped = selectedTools.reduce((acc, item) => {
       acc[item.ownerName] = acc[item.ownerName] || [];
       acc[item.ownerName].push(item);
@@ -89,19 +83,14 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
     const newOrders: StoreOrderGroup[] = Object.entries(grouped).map(([ownerName, items], idx) => ({
       orderId: `ORD-${Date.now().toString().slice(-4)}-${idx + 1}`,
-      ownerName,
-      clientName,
-      items,
-      totalPrice: items.reduce((sum, i) => sum + i.price, 0),
-      startDate,
-      endDate,
-      status: "LUNAS",
+      ownerName, clientName, items, totalPrice: items.reduce((sum, i) => sum + i.price, 0), startDate, endDate, status: "LUNAS",
     }));
 
     setStoreOrders((prev) => [...newOrders, ...prev]);
     setSelectedTools([]);
   };
 
+  // FIX: Tambahkan parameter tourDate sesuai Flowchart
   const createGuideRequest = (guide: { id: string; name: string; price: number; avatar: string }, destination: string, clientName: string, tourDate: string) => {
     setGuideRequests((prev) => [...prev, { id: `REQ-${Date.now().toString().slice(-4)}`, guideId: guide.id, guideName: guide.name, clientName, selectedDestination: destination, tourDate, price: guide.price, avatar: guide.avatar, status: "MENUNGGU" }]);
   };
