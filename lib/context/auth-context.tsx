@@ -33,20 +33,20 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
+// Default Avatar Icon (Orang Setengah Badan)
+const DEFAULT_AVATAR = "https://ui-avatars.com/api/?name=User&background=e2e8f0&color=64748b&rounded=true&size=128";
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
   const [registeredUsers, setRegisteredUsers] = React.useState<UserProfile[]>([]);
   const [isLoaded, setIsLoaded] = React.useState(false);
   
-  // Toast State
   const [toastMsg, setToastMsg] = React.useState("");
   const [toastType, setToastType] = React.useState<ToastType>("info");
   const [isToastVisible, setIsToastVisible] = React.useState(false);
 
   const showToast = (msg: string, type: ToastType) => {
-    setToastMsg(msg);
-    setToastType(type);
-    setIsToastVisible(true);
+    setToastMsg(msg); setToastType(type); setIsToastVisible(true);
   };
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -60,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({
         id: data.id, name: data.full_name, email: email, phone: data.phone || "",
         origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
-        role: data.role as UserRole, status: data.status as AccountStatus || "approved", avatar: data.avatar_url || "",
+        role: data.role as UserRole, status: data.status as AccountStatus || "approved", 
+        avatar: data.avatar_url || DEFAULT_AVATAR,
       });
     }
   };
@@ -72,7 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setRegisteredUsers(data.map((d: any) => ({
         id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
         origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
-        role: d.role as UserRole, status: d.status as AccountStatus || "approved", avatar: d.avatar_url || ""
+        role: d.role as UserRole, status: d.status as AccountStatus || "approved", 
+        avatar: d.avatar_url || DEFAULT_AVATAR
       })));
     }
   };
@@ -83,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email!);
-        if (session.user.email === "admin@gamtara.com") await fetchAllUsers();
+        if (session.user.email === "admin.gamtara@gmail.com") await fetchAllUsers();
       }
       setIsLoaded(true);
     };
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) { showToast(error.message, "error"); return false; }
     if (data.user) {
       await fetchProfile(data.user.id, data.user.email!);
-      if (email === "admin@gamtara.com") await fetchAllUsers();
+      if (email === "admin.gamtara@gmail.com") await fetchAllUsers();
       showToast("Berhasil Masuk!", "success");
       return true;
     }
@@ -110,18 +112,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authData.user) {
       const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
+      
+      // 1. Insert ke Profiles
       await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
         origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus
       }]);
 
-      if (profileData.role === "pemilik") {
-        await supabase.from("vendors").insert([{ profile_id: authData.user.id, vendor_type: "tool_provider", business_name: profileData.businessName, location: profileData.origin }]);
-      }
-      if (profileData.role === "pemandu") {
-        const { data: vendorData } = await supabase.from("vendors").insert([{ profile_id: authData.user.id, vendor_type: "tour_guide", business_name: profileData.name, location: profileData.origin }]).select("id").single();
-        if (vendorData) {
-          await supabase.from("guide_profiles").insert([{ vendor_id: vendorData.id, full_name: profileData.name, languages: profileData.languages, specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop" }]);
+      // 2. Insert ke Vendors (Jika Pemilik/Pemandu)
+      if (profileData.role === "pemilik" || profileData.role === "pemandu") {
+        const vType = profileData.role === "pemilik" ? "tool_provider" : "tour_guide";
+        const bName = profileData.role === "pemilik" ? profileData.businessName : profileData.name;
+        
+        const { data: vendorData } = await supabase.from("vendors").insert([{ 
+          profile_id: authData.user.id, vendor_type: vType, business_name: bName, location: profileData.origin 
+        }]).select("id").single();
+
+        // 3. FIX: Insert ke Guide Profiles (Format Array PostgreSQL yang Benar)
+        if (profileData.role === "pemandu" && vendorData) {
+          await supabase.from("guide_profiles").insert([{ 
+            vendor_id: vendorData.id, full_name: profileData.name, languages: profileData.languages, 
+            specialty_spots: `{${profileData.origin}}`, // Format Array PostgreSQL
+            rate_per_day: 150000, avatar_url: DEFAULT_AVATAR 
+          }]);
         }
       }
 
@@ -132,10 +145,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return false;
   };
 
+  // FIX: Update Avatar Realtime
   const updateAvatar = async (avatarUrl: string) => {
     if (!user || !supabaseUrl) return;
     await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
-    setUser({ ...user, avatar: avatarUrl });
+    setUser((prev) => prev ? { ...prev, avatar: avatarUrl } : null); // Paksa re-render state
     showToast("Foto profil diperbarui!", "success");
   };
 
