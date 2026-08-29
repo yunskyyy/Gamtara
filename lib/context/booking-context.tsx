@@ -22,7 +22,7 @@ interface BookingContextType {
   updateGuideStatus: (requestId: string, status: "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI") => void;
   payGuideRequest: (requestId: string) => void;
   cancelGuideRequest: (requestId: string) => void;
-  completeCheckout: (startDate: string, endDate: string, clientName: string) => void;
+  completeCheckout: (startDate: string, endDate: string, clientName: string, userId: string) => Promise<void>;
   updateStoreOrderStatus: (orderId: string, status: "DIGUNAKAN" | "SELESAI", photoBefore?: string, photoAfter?: string) => void;
   reportDamageDispute: (orderId: string, photoBefore: string, photoAfter: string, claimAmount: number) => void;
   resolveDispute: (disputeId: string, action: "DISETUJUI" | "DITOLAK") => void;
@@ -74,23 +74,68 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const toggleTool = (tool: ToolOrderItem) => setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);
   const clearBooking = () => setSelectedTools([]);
 
-  const completeCheckout = async (startDate: string, endDate: string, clientName: string) => {
+  // FUNGSI CHECKOUT REAL KE SUPABASE
+  const completeCheckout = async (startDate: string, endDate: string, clientName: string, userId: string) => {
+    if (!supabaseUrl || !userId) return;
+
     const grouped = selectedTools.reduce((acc, item) => {
       acc[item.ownerName] = acc[item.ownerName] || [];
       acc[item.ownerName].push(item);
       return acc;
     }, {} as Record<string, ToolOrderItem[]>);
 
-    const newOrders: StoreOrderGroup[] = Object.entries(grouped).map(([ownerName, items], idx) => ({
-      orderId: `ORD-${Date.now().toString().slice(-4)}-${idx + 1}`,
-      ownerName, clientName, items, totalPrice: items.reduce((sum, i) => sum + i.price, 0), startDate, endDate, status: "LUNAS",
-    }));
+    const newOrders: StoreOrderGroup[] = [];
+
+    for (const [ownerName, items] of Object.entries(grouped)) {
+      const orderId = `ORD-${Date.now().toString().slice(-4)}`;
+      const totalPrice = items.reduce((sum, i) => sum + i.price, 0);
+
+      // 1. Cari Vendor ID berdasarkan nama toko
+      const { data: vendorData } = await supabase.from("vendors").select("id").eq("business_name", ownerName).single();
+      
+      if (vendorData) {
+        // 2. Insert ke tabel bookings
+        const { data: bookingData } = await supabase.from("bookings").insert([{
+          customer_id: userId,
+          vendor_id: vendorData.id,
+          total_amount: totalPrice,
+          status: "paid",
+          qr_code_token: `TRX-${orderId}`,
+          start_date: startDate,
+          end_date: endDate
+        }]).select("id").single();
+
+        if (bookingData) {
+          // 3. Insert ke booking_tool_items & Kurangi Stok
+          for (const item of items) {
+            await supabase.from("booking_tool_items").insert([{
+              booking_id: bookingData.id,
+              tool_id: item.id,
+              start_date: startDate,
+              end_date: endDate
+            }]);
+
+            // Kurangi stok dan tambah rent_count
+            const { data: toolData } = await supabase.from("tools").select("stock, rent_count").eq("id", item.id).single();
+            if (toolData && toolData.stock > 0) {
+              await supabase.from("tools").update({
+                stock: toolData.stock - 1,
+                rent_count: (toolData.rent_count || 0) + 1
+              }).eq("id", item.id);
+            }
+          }
+        }
+      }
+
+      newOrders.push({
+        orderId, ownerName, clientName, items, totalPrice, startDate, endDate, status: "LUNAS",
+      });
+    }
 
     setStoreOrders((prev) => [...newOrders, ...prev]);
     setSelectedTools([]);
   };
 
-  // FIX: Tambahkan parameter tourDate sesuai Flowchart
   const createGuideRequest = (guide: { id: string; name: string; price: number; avatar: string }, destination: string, clientName: string, tourDate: string) => {
     setGuideRequests((prev) => [...prev, { id: `REQ-${Date.now().toString().slice(-4)}`, guideId: guide.id, guideName: guide.name, clientName, selectedDestination: destination, tourDate, price: guide.price, avatar: guide.avatar, status: "MENUNGGU" }]);
   };

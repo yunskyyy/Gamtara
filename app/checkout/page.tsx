@@ -21,8 +21,6 @@ export default function CheckoutPage() {
   
   const [payingVendor, setPayingVendor] = React.useState<string | null>(null);
   const [paidVendors, setPaidVendors] = React.useState<string[]>([]);
-  
-  // FIX: Kembalikan state isPaid yang hilang
   const [isPaid, setIsPaid] = React.useState(false);
 
   const groupedOrders = React.useMemo(() => {
@@ -38,10 +36,11 @@ export default function CheckoutPage() {
     setTimeout(() => {
       setPaidVendors((prev) => [...prev, vendorName]);
       setPayingVendor(null);
-      setIsPaid(false); // Reset untuk pembayaran toko berikutnya
+      setIsPaid(false);
       
       if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur");
+        // FIX: Kirim user.id ke fungsi completeCheckout
+        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "");
         router.push("/profile");
       }
     }, 1500);

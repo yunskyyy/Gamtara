@@ -10,6 +10,7 @@ import { useTourism } from "@/lib/context/tourism-context";
 import { Camera, CheckCircle2, MessageSquare, Store, Upload, Plus, Pencil, Trash2, X, ShieldAlert } from "lucide-react";
 import { addNewTool, getVendorIdByProfile } from "@/services/tourism-service";
 import { createBrowserClient } from "@supabase/ssr";
+import { Toast, ToastType } from "@/components/ui/toast";
 
 export default function PemilikDashboardPage() {
   const router = useRouter();
@@ -21,6 +22,15 @@ export default function PemilikDashboardPage() {
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [vendorName, setVendorName] = React.useState<string>("");
+
+  // Toast State
+  const [toastMsg, setToastMsg] = React.useState("");
+  const [toastType, setToastType] = React.useState<ToastType>("info");
+  const [isToastVisible, setIsToastVisible] = React.useState(false);
+
+  const showToast = (msg: string, type: ToastType) => {
+    setToastMsg(msg); setToastType(type); setIsToastVisible(true);
+  };
 
   const [toolName, setToolName] = React.useState("");
   const [toolDesc, setToolDesc] = React.useState("");
@@ -34,7 +44,6 @@ export default function PemilikDashboardPage() {
   const [photoAfter, setPhotoAfter] = React.useState<string | null>(null);
   const [scannedCode, setScannedCode] = React.useState<string | null>(null);
 
-  // Ambil nama toko (business_name) dari Supabase untuk filter pesanan
   React.useEffect(() => {
     async function fetchVendorName() {
       if (user?.id) {
@@ -74,7 +83,6 @@ export default function PemilikDashboardPage() {
     );
   }
 
-  // Filter pesanan berdasarkan nama toko yang login
   const myOrders = storeOrders.filter((o) => o.ownerName === vendorName);
   const lunasOrders = myOrders.filter((o) => o.status === "LUNAS" || o.status === "DIGUNAKAN");
   const myTools = tools.filter((t) => t.ownerName === vendorName);
@@ -86,16 +94,21 @@ export default function PemilikDashboardPage() {
 
   const handleAddToolSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !toolImage) { alert("Harap lengkapi data dan foto alat!"); return; }
+    if (!user || !toolImage) { showToast("Harap lengkapi data dan foto alat!", "error"); return; }
     setIsUploading(true);
+    
     const vendorId = await getVendorIdByProfile(user.id);
-    if (!vendorId) { alert("Data Toko Anda belum lengkap di database. Hubungi Admin."); setIsUploading(false); return; }
+    if (!vendorId) { showToast("Data Toko Anda belum lengkap di database.", "error"); setIsUploading(false); return; }
+    
     const res = await addNewTool(vendorId, { name: toolName, desc: toolDesc, category: toolCategory, price: Number(toolPrice), stock: Number(toolStock) }, toolImage);
+    
     if (res.success) {
-      alert("Alat berhasil ditambahkan! Silakan refresh halaman.");
+      showToast("Alat berhasil ditambahkan! Silakan refresh halaman.", "success");
       setIsAddModalOpen(false);
       setToolName(""); setToolDesc(""); setToolPrice(""); setToolStock("1"); setToolImage(null); setImagePreview(null);
-    } else { alert("Gagal: " + res.message); }
+    } else { 
+      showToast("Gagal: " + res.message, "error"); 
+    }
     setIsUploading(false);
   };
 
@@ -170,7 +183,6 @@ export default function PemilikDashboardPage() {
           </div>
         )}
 
-        {/* Modal Tambah Alat Real */}
         {isAddModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
             <div className="bg-[#f4f2eb] p-6 sm:p-8 rounded-sm max-w-lg w-full border border-stone-300 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -202,6 +214,7 @@ export default function PemilikDashboardPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMsg} type={toastType} isVisible={isToastVisible} onClose={() => setIsToastVisible(false)} />
     </main>
   );
 }
