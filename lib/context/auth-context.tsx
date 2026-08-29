@@ -53,20 +53,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
   const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
-  const fetchProfile = async (userId: string, email: string) => {
-    if (!supabaseUrl) return;
-    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    if (data) {
-      const defaultAvatar = data.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
-      setUser({
-        id: data.id, name: data.full_name, email: email, phone: data.phone || "",
-        origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
-        role: data.role as UserRole, status: data.status as AccountStatus || "approved", 
-        avatar: data.avatar_url || defaultAvatar,
-      });
-    }
-  };
-
   const fetchAllUsers = async () => {
     if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*");
@@ -83,13 +69,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const fetchProfile = async (userId: string, email: string) => {
+    if (!supabaseUrl) return;
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    if (data) {
+      const defaultAvatar = data.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
+      const userRole = data.role as UserRole;
+      
+      setUser({
+        id: data.id, name: data.full_name, email: email, phone: data.phone || "",
+        origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
+        role: userRole, status: data.status as AccountStatus || "approved", 
+        avatar: data.avatar_url || defaultAvatar,
+      });
+
+      // FIX: Jika role adalah admin, tarik semua data user untuk Dashboard Admin
+      if (userRole === "admin") {
+        await fetchAllUsers();
+      }
+    }
+  };
+
   React.useEffect(() => {
     if (!supabaseUrl) { setIsLoaded(true); return; }
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email!);
-        if (session.user.email === "admin.gamtara@gmail.com") await fetchAllUsers();
       }
       setIsLoaded(true);
     };
@@ -102,7 +108,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) { showToast(error.message, "error"); return false; }
     if (data.user) {
       await fetchProfile(data.user.id, data.user.email!);
-      if (email === "admin.gamtara@gmail.com") await fetchAllUsers();
       showToast("Berhasil Masuk!", "success");
       return true;
     }
@@ -119,7 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
       const defaultAvatar = profileData.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
       
-      // 1. Insert ke Profiles
       const { error: profileError } = await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
         origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus,
@@ -128,11 +132,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileError) { showToast("Gagal menyimpan profil: " + profileError.message, "error"); return false; }
 
-      // 2. Insert ke Vendors (Jika Pemilik/Pemandu)
       if (profileData.role === "pemilik" || profileData.role === "pemandu") {
         const vType = profileData.role === "pemilik" ? "tool_provider" : "tour_guide";
-        
-        // FIX: Pastikan membaca variabel businessName dari form, jika kosong gunakan nama user
         const bName = profileData.role === "pemilik" ? (profileData.businessName || profileData.name) : profileData.name;
         
         const { data: vendorData, error: vendorError } = await supabase.from("vendors").insert([{ 
@@ -141,11 +142,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (vendorError) { console.error("Vendor Insert Error:", vendorError); }
 
-        // 3. Insert ke Guide Profiles (Jika Pemandu)
         if (profileData.role === "pemandu" && vendorData) {
-          // FIX: Pastikan membaca variabel languages dari form, jika kosong gunakan default
           const langs = profileData.languages || "Bahasa Indonesia";
-          
           const { error: guideError } = await supabase.from("guide_profiles").insert([{ 
             vendor_id: vendorData.id, full_name: profileData.name, languages: langs, 
             specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: defaultAvatar 
