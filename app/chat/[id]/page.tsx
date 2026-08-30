@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useAuth } from "@/lib/context/auth-context";
 import { useBooking } from "@/lib/context/booking-context";
-import { Send, ArrowLeft, ShieldCheck, User } from "lucide-react";
+import { Send, ArrowLeft, ShieldCheck, User, Store } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 
 export default function ChatRoomPage() {
@@ -13,50 +13,39 @@ export default function ChatRoomPage() {
   const router = useRouter();
   const id = params.id as string;
   const { user } = useAuth();
-  const { storeOrders, guideRequests } = useBooking();
+  const { guideRequests } = useBooking();
   
   const [inputText, setInputText] = React.useState("");
   const [messages, setMessages] = React.useState<any[]>([]);
+  const [orderDetails, setOrderDetails] = React.useState<any>(null);
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
-  // 1. Tarik Pesan Lama & Subscribe ke Pesan Baru (Realtime WebSockets)
   React.useEffect(() => {
     if (!id) return;
 
-    const fetchMessages = async () => {
-      const { data } = await supabase
-        .from("chat_messages")
-        .select("*")
-        .eq("order_or_request_id", id)
-        .order("created_at", { ascending: true });
-      if (data) setMessages(data);
+    const fetchMessagesAndOrder = async () => {
+      // Tarik Pesan
+      const { data: msgData } = await supabase.from("chat_messages").select("*").eq("order_or_request_id", id).order("created_at", { ascending: true });
+      if (msgData) setMessages(msgData);
+
+      // Tarik Rincian Pesanan (Jika ini chat alat sewa)
+      if (id.startsWith("TRX-")) {
+        const { data: ordData } = await supabase.from("bookings").select("*, customer:profiles!customer_id(full_name), vendor:vendors(business_name), items:booking_tool_items(tool:tools(name))").eq("qr_code_token", id).single();
+        if (ordData) setOrderDetails(ordData);
+      }
     };
 
-    fetchMessages();
+    fetchMessagesAndOrder();
 
-    // Subscribe ke perubahan tabel chat_messages secara realtime
-    const channel = supabase
-      .channel(`room_${id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages", filter: `order_or_request_id=eq.${id}` },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new]);
-        }
-      )
-      .subscribe();
+    const channel = supabase.channel(`room_${id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "chat_messages", filter: `order_or_request_id=eq.${id}` }, (payload) => {
+      setMessages((prev) => [...prev, payload.new]);
+    }).subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   }, [id, supabase]);
 
-  // 2. Auto-scroll ke pesan terbaru
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -73,34 +62,34 @@ export default function ChatRoomPage() {
   }
 
   const guideReq = guideRequests.find((r) => r.id === id);
-  const toolOrd = storeOrders.find((o) => o.orderId === id);
-
   const isGuideChat = !!guideReq;
-  const targetName = isGuideChat 
-    ? (user.role === "pemandu" ? guideReq.clientName : guideReq.guideName)
-    : (user.role === "pemilik" ? toolOrd?.clientName : toolOrd?.ownerName);
+  
+  let targetName = "Mitra GAMTARA";
+  let subtitle = "";
 
-  // 3. Fungsi Kirim Pesan ke Supabase
+  if (isGuideChat) {
+    targetName = user.role === "pemandu" ? guideReq.clientName : guideReq.guideName;
+    subtitle = `Destinasi: ${guideReq.selectedDestination}`;
+  } else if (orderDetails) {
+    targetName = user.role === "pemilik" ? orderDetails.customer?.full_name : orderDetails.vendor?.business_name;
+    const itemNames = orderDetails.items?.map((i: any) => i.tool?.name).join(", ");
+    subtitle = `Barang: ${itemNames} | Total: Rp ${Number(orderDetails.total_amount).toLocaleString("id-ID")}`;
+  }
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim()) return;
     
     const textToSend = inputText;
-    setInputText(""); // Kosongkan input langsung agar UX terasa cepat
+    setInputText(""); 
 
     const { error } = await supabase.from("chat_messages").insert([{
-      order_or_request_id: id,
-      sender_name: user.name,
-      text: textToSend
+      order_or_request_id: id, sender_name: user.name, text: textToSend
     }]);
 
-    if (error) {
-      console.error("Gagal mengirim pesan:", error);
-      alert("Gagal mengirim pesan. Periksa koneksi Anda.");
-    }
+    if (error) alert("Gagal mengirim pesan. Periksa koneksi Anda.");
   };
 
-  // Format waktu (HH:MM)
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -117,10 +106,12 @@ export default function ChatRoomPage() {
         <div className="bg-white border border-stone-300 rounded-none overflow-hidden shadow-sm flex flex-col h-[580px]">
           <div className="bg-[#1d3a28] text-white p-4 flex justify-between items-center border-b border-stone-800">
             <div>
-              <span className="font-mono text-[10px] text-[#c5922e] uppercase font-bold tracking-widest block">// ROOM CHAT TERVERIFIKASI</span>
+              <span className="font-mono text-[10px] text-[#c5922e] uppercase font-bold tracking-widest block mb-1">// ROOM CHAT TERVERIFIKASI</span>
               <h2 className="text-base font-extrabold flex items-center gap-2">
-                <User className="w-4 h-4 text-emerald-300" /> Kontak: {targetName || "Mitra GAMTARA"} ({id})
+                {isGuideChat ? <User className="w-4 h-4 text-emerald-300" /> : <Store className="w-4 h-4 text-emerald-300" />}
+                Kontak: {targetName}
               </h2>
+              <p className="text-[10px] text-stone-300 font-mono mt-1">{subtitle}</p>
             </div>
             <span className="px-2.5 py-1 bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] uppercase font-bold flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" /> Lunas & Aktif

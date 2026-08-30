@@ -15,6 +15,11 @@ export function Navbar() {
 
   const isAdmin = user?.role === "admin";
 
+  // Fungsi untuk mengambil inisial nama (Misal: "Wisatawan Subur" -> "WS")
+  const getInitials = (name: string) => {
+    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+  };
+
   return (
     <>
       <motion.header className="fixed top-0 left-0 right-0 z-40 flex flex-col items-center pt-4 px-4 pointer-events-none">
@@ -24,17 +29,14 @@ export function Navbar() {
             <Logo variant="full" height={48} />
           </Link>
 
-          {/* Navigasi Tengah Bersih (Tanpa Profil Saya) */}
           <ul className="hidden md:flex items-center gap-8 text-xs font-bold tracking-wider text-stone-700 uppercase font-mono">
             <li><Link href="/" className="hover:text-[#1d3a28] transition-colors">Beranda</Link></li>
-            
             {!isAdmin && (
               <>
                 <li><Link href="/tools" className="hover:text-[#1d3a28] transition-colors">Sewa Alat</Link></li>
                 <li><Link href="/guides" className="hover:text-[#1d3a28] transition-colors">Pemandu Wisata</Link></li>
               </>
             )}
-
             {user?.role === "pemilik" && <li><Link href="/vendor/pemilik" className="text-[#c5922e] hover:underline">Dashboard Toko</Link></li>}
             {user?.role === "pemandu" && <li><Link href="/vendor/pemandu" className="text-[#c5922e] hover:underline">Dashboard Pemandu</Link></li>}
             {isAdmin && <li><Link href="/admin/dashboard" className="text-rose-700 hover:underline">Dashboard Admin</Link></li>}
@@ -43,13 +45,8 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <div className="hidden md:flex items-center">
-                {/* Avatar Foto Profil sebagai Link ke Halaman Profil */}
-                <Link href="/profile" className="w-9 h-9 rounded-full overflow-hidden border-2 border-stone-300 hover:border-[#1d3a28] transition-colors cursor-pointer shadow-sm">
-                  <img 
-                    src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop"} 
-                    alt="Profil" 
-                    className="w-full h-full object-cover"
-                  />
+                <Link href="/profile" className="w-9 h-9 rounded-none overflow-hidden border-2 border-stone-300 hover:border-[#1d3a28] transition-colors cursor-pointer shadow-sm bg-stone-200 flex items-center justify-center text-[#1d3a28] font-bold text-xs">
+                  {user.avatar ? <img src={user.avatar} alt="Profil" className="w-full h-full object-cover" /> : getInitials(user.name)}
                 </Link>
               </div>
             ) : (
@@ -64,7 +61,6 @@ export function Navbar() {
           </div>
         </nav>
 
-        {/* Mobile Menu */}
         <AnimatePresence>
           {isMobileMenuOpen && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute top-full left-0 right-0 bg-[#f4f2eb] border-b border-stone-300 p-4 font-mono text-xs font-bold uppercase tracking-widest text-stone-800 space-y-2 shadow-xl z-50 pointer-events-auto">
@@ -81,7 +77,9 @@ export function Navbar() {
               
               {user ? (
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[#1d3a28] flex items-center gap-2">
-                  <img src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop"} className="w-6 h-6 rounded-full object-cover border border-stone-300" />
+                  <div className="w-6 h-6 rounded-none bg-stone-200 flex items-center justify-center text-[8px] font-bold border border-stone-300">
+                    {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : getInitials(user.name)}
+                  </div>
                   Profil Saya
                 </Link>
               ) : (

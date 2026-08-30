@@ -33,8 +33,8 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-const DEFAULT_AVATAR_MALE = "https://i.pinimg.com/736x/8b/16/7a/8b167af653c2399dd93b952a48740620.jpg";
-const DEFAULT_AVATAR_FEMALE = "https://i.pinimg.com/736x/1c/54/f7/1c54f7b06d7723c21afc5035bf88a5ef.jpg";
+
+
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await supabase.from("profiles").select("*");
     if (data) {
       setRegisteredUsers(data.map((d: any) => {
-        const defaultAvatar = d.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
+        const defaultAvatar = "";
         return {
           id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
           origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
     if (data) {
-      const defaultAvatar = data.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
+      const defaultAvatar = "";
       const userRole = data.role as UserRole;
       
       setUser({
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authData.user) {
       const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
-      const defaultAvatar = profileData.gender === "Perempuan" ? DEFAULT_AVATAR_FEMALE : DEFAULT_AVATAR_MALE;
+      const defaultAvatar = "";
       
       const { error: profileError } = await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
