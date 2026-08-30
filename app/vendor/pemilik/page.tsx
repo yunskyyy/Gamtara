@@ -23,7 +23,6 @@ export default function PemilikDashboardPage() {
   const [isUploading, setIsUploading] = React.useState(false);
   const [vendorName, setVendorName] = React.useState<string>("");
   
-  // State untuk menyimpan pesanan asli dari Supabase
   const [realOrders, setRealOrders] = React.useState<any[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = React.useState(true);
 
@@ -47,26 +46,31 @@ export default function PemilikDashboardPage() {
   const [photoAfter, setPhotoAfter] = React.useState<string | null>(null);
   const [scannedCode, setScannedCode] = React.useState<string | null>(null);
 
-  // FIX: Tarik Pesanan Berdasarkan vendor_id
   React.useEffect(() => {
     async function fetchVendorDataAndOrders() {
       if (!user?.id) return;
       const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
       
-      // 1. Dapatkan vendor_id dan nama toko
       const { data: vendor } = await supabase.from("vendors").select("id, business_name").eq("profile_id", user.id).single();
       
       if (vendor) {
         setVendorName(vendor.business_name);
         
-        // 2. Tarik pesanan yang vendor_id-nya cocok
-        const { data: bookings } = await supabase
+        // FIX: Gunakan relasi eksplisit customer_id untuk menarik nama penyewa
+        const { data: bookings, error } = await supabase
           .from("bookings")
-          .select("*, profiles(full_name)")
+          .select(`
+            *,
+            customer:profiles!customer_id(full_name)
+          `)
           .eq("vendor_id", vendor.id)
           .order("created_at", { ascending: false });
           
-        if (bookings) setRealOrders(bookings);
+        if (error) {
+          console.error("Error fetching bookings:", error);
+        } else if (bookings) {
+          setRealOrders(bookings);
+        }
       }
       setIsLoadingOrders(false);
     }
@@ -156,7 +160,8 @@ export default function PemilikDashboardPage() {
               realOrders.map((ord) => (
                 <div key={ord.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-none flex justify-between items-center text-xs">
                   <div>
-                    <p className="font-bold text-sm text-stone-900">Penyewa: {ord.profiles?.full_name || "Wisatawan"}</p>
+                    {/* FIX: Tampilkan nama penyewa dari relasi customer */}
+                    <p className="font-bold text-sm text-stone-900">Penyewa: {ord.customer?.full_name || "Wisatawan"}</p>
                     <p className="text-stone-600 font-mono">Token: {ord.qr_code_token} • Jadwal: {ord.start_date} s/d {ord.end_date}</p>
                     <span className="font-bold text-[#1d3a28] mt-1 inline-block uppercase">Status: {ord.status}</span>
                   </div>
