@@ -1,7 +1,9 @@
 ﻿import { createBrowserClient } from "@supabase/ssr";
 
 function getClient() {
-  return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  return createBrowserClient(supabaseUrl, supabaseKey);
 }
 
 export async function fetchRealTools() {
@@ -10,17 +12,11 @@ export async function fetchRealTools() {
   const { data, error } = await supabase.from("tools").select("*, vendors(id, business_name, location, lat, lng)");
   if (error || !data) return [];
   return data.map((t: any) => ({
-    id: t.id, 
-    name: t.name, 
-    desc: t.description || "", 
-    category: t.category, 
-    price: Number(t.price), 
-    stock: t.stock,
-    vendorId: t.vendors?.id, // WAJIB ADA UNTUK CHECKOUT
-    ownerName: t.vendors?.business_name || "Mitra", 
-    loc: t.vendors?.location || "Ternate", 
+    id: t.id, name: t.name, desc: t.description || "", category: t.category, price: Number(t.price), stock: t.stock,
+    vendorId: t.vendors?.id || "v-default", ownerName: t.vendors?.business_name || "Mitra", vendorName: t.vendors?.business_name || "Mitra",
+    loc: t.vendors?.location || "Ternate", location: t.vendors?.location || "Ternate",
     dist: "2.4 KM", temp: "28°C", rating: "4.9", rentCount: t.rent_count || 0,
-    img: t.img_url,
+    lat: t.vendors?.lat || 0.7893, lng: t.vendors?.lng || 127.3871, img: t.img_url,
   }));
 }
 
@@ -46,7 +42,7 @@ export async function addNewTool(vendorId: string, toolData: any, imageFile: Fil
   const { data: { publicUrl } } = supabase.storage.from('gamtara-storage').getPublicUrl(fileName);
 
   const { error: insertError } = await supabase.from("tools").insert([{
-    vendor_id: vendorId, name: toolData.name, description: toolData.desc, category: toolCategory, price: toolData.price, stock: toolData.stock, img_url: publicUrl
+    vendor_id: vendorId, name: toolData.name, description: toolData.desc, category: toolData.category, price: toolData.price, stock: toolData.stock, img_url: publicUrl
   }]);
   if (insertError) return { success: false, message: insertError.message };
   return { success: true, message: "Alat berhasil ditambahkan!" };

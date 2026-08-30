@@ -79,7 +79,7 @@ export default function GuidesCatalogPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {filtered.map((guide) => {
               const isAvailable = guide.status === "Tersedia" || guide.status === "available";
-              const activeReq = guideRequests.find((r) => r.guideId === guide.id);
+              const activeReq = guideRequests.find((r: any) => r.guideId === guide.id);
 
               return (
                 <div key={guide.id} className="bg-white border border-stone-300 rounded-none p-5 shadow-sm hover:shadow-md transition-shadow text-center group">
@@ -166,7 +166,7 @@ export default function GuidesCatalogPage() {
               </div>
             ) : (
               <div className="space-y-4 max-h-72 overflow-y-auto pr-2">
-                {guideRequests.map((req) => (
+                {guideRequests.map((req: any) => (
                   <div key={req.id} className="p-4 bg-white border border-stone-300 flex justify-between items-center rounded-none">
                     <div>
                       <p className="font-extrabold text-stone-900 text-base mb-0.5">{req.guideName}</p>

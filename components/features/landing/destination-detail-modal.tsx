@@ -29,7 +29,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
   const handleSelectTool = (tool: ToolItem) => {
     if (!user) { setIsPromptOpen(true); return; }
     if (!isCustomer) { alert("Hanya wisatawan (Penyewa) yang dapat menyewa alat."); return; }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName || "Mitra Vendor", img: tool.img });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName || "Mitra Vendor", img: tool.img, vendorId: tool.vendorId || "v-default" });
   };
 
   // FUNGSI INI YANG SEBELUMNYA HILANG DAN MEMBUAT GAGAL BUILD

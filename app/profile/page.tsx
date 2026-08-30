@@ -142,7 +142,7 @@ export default function ProfilePage() {
                           <span className="font-mono font-bold text-[#1d3a28]">{ord.orderId} — {ord.ownerName}</span>
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase">{ord.status}</span>
                         </div>
-                        <p className="text-stone-600"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                        <p className="text-stone-600"><strong>Item:</strong> {ord.items.map((i: any) => i.name).join(", ")}</p>
                         <p className="text-stone-600 font-mono"><strong>Jadwal:</strong> {ord.startDate} s/d {ord.endDate}</p>
                         <div className="flex justify-between items-center pt-2 gap-2">
                           <span className="font-bold text-[#1d3a28] font-mono">Total: Rp {ord.totalPrice.toLocaleString("id-ID")}</span>
@@ -164,7 +164,7 @@ export default function ProfilePage() {
                           <span className="font-mono font-bold text-stone-600">{ord.orderId} — {ord.ownerName}</span>
                           <span className="px-2 py-0.5 bg-stone-200 text-stone-600 text-[10px] font-bold uppercase">{ord.status}</span>
                         </div>
-                        <p className="text-stone-500"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                        <p className="text-stone-500"><strong>Item:</strong> {ord.items.map((i: any) => i.name).join(", ")}</p>
                       </div>
                     ))}
                   </div>
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                             <span className="font-mono font-bold text-rose-700">{ord.orderId} — {ord.ownerName}</span>
                             <span className="px-2 py-0.5 bg-rose-200 text-rose-800 text-[10px] font-bold uppercase">{ord.status}</span>
                           </div>
-                          <p className="text-rose-700"><strong>Item:</strong> {ord.items.map((i) => i.name).join(", ")}</p>
+                          <p className="text-rose-700"><strong>Item:</strong> {ord.items.map((i: any) => i.name).join(", ")}</p>
                         </div>
                       ))}
                     </div>
@@ -190,7 +190,7 @@ export default function ProfilePage() {
                   <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-3 flex items-center gap-2">
                     <Compass className="w-4 h-4 text-[#1d3a28]" /> Riwayat Permintaan Pemandu Wisata
                   </h3>
-                  {guideRequests.length === 0 ? <p className="text-xs text-stone-500 font-mono py-2">Belum ada permintaan pemandu dikirim.</p> : guideRequests.map((req) => (
+                  {guideRequests.length === 0 ? <p className="text-xs text-stone-500 font-mono py-2">Belum ada permintaan pemandu dikirim.</p> : guideRequests.map((req: any) => (
                     <div key={req.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-none flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
                       <div>
                         <p className="font-bold text-sm text-stone-900">{req.guideName} ({req.selectedDestination})</p>

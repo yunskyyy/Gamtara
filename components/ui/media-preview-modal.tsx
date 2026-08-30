@@ -12,6 +12,7 @@ export interface PreviewData {
   price: number;
   img: string;
   ownerName?: string;
+  vendorId?: string;
   categoryOrLang?: string;
   rating?: string | number;
   desc?: string;
@@ -57,7 +58,7 @@ export function MediaPreviewModal({ data, onClose }: ModalProps) {
 
             {isTool && (
               <button
-                onClick={() => toggleTool({ id: data.id, name: data.name, price: data.price, ownerName: data.ownerName || "Toko Gamalama Outdoor", img: data.img })}
+                onClick={() => toggleTool({ id: data.id, name: data.name, price: data.price, ownerName: data.ownerName || "Toko Gamalama Outdoor", img: data.img, vendorId: data.vendorId || "v-default" })}
                 className={`w-full py-3.5 font-bold text-xs uppercase tracking-widest transition-colors cursor-pointer flex items-center justify-center gap-2 border ${
                   isToolSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-transparent text-stone-900 hover:bg-stone-200 border-stone-900"
                 }`}

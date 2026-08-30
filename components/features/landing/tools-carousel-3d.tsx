@@ -55,7 +55,7 @@ export function ToolsCarousel3D() {
   const handleToolClick = (e: React.MouseEvent, item: ToolItem) => {
     e.stopPropagation();
     if (!user) { setIsPromptOpen(true); return; }
-    toggleTool(item);
+    toggleTool({ id: item.id, name: item.name, price: item.price, ownerName: item.ownerName, img: item.img, vendorId: item.vendorId });
   };
 
   return (

@@ -31,7 +31,7 @@ export default function ToolsCatalogPage() {
 
   const handleSelectTool = (tool: ToolItem) => {
     if (!user) { setIsPromptOpen(true); return; }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName, img: tool.img });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName, img: tool.img, vendorId: tool.vendorId });
   };
 
   return (
