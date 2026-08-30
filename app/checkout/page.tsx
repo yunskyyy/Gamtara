@@ -23,6 +23,15 @@ export default function CheckoutPage() {
   const [paidVendors, setPaidVendors] = React.useState<string[]>([]);
   const [isPaid, setIsPaid] = React.useState(false);
 
+  // FIX: Kalkulasi Jumlah Hari Sewa
+  const totalDays = React.useMemo(() => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays === 0 ? 1 : diffDays; // Minimal 1 hari
+  }, [startDate, endDate]);
+
   const groupedOrders = React.useMemo(() => {
     return selectedTools.reduce((acc, item) => {
       acc[item.ownerName] = acc[item.ownerName] || [];
@@ -39,7 +48,7 @@ export default function CheckoutPage() {
       setIsPaid(false);
       
       if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "");
+        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "", totalDays);
         router.push("/profile");
       }
     }, 1500);
@@ -70,7 +79,6 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-7 space-y-6">
-            {/* FIX: Form Pemilihan Tanggal Sewa */}
             <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
               <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#1d3a28]" /> Tanggal Sewa Pelaksanaan
@@ -85,6 +93,7 @@ export default function CheckoutPage() {
                   <input type="date" min={startDate} value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full p-2.5 bg-[#f4f2eb] border border-stone-300 rounded-sm" />
                 </div>
               </div>
+              <p className="text-xs font-bold text-[#1d3a28] bg-emerald-50 p-2 rounded border border-emerald-200">Total Durasi Sewa: {totalDays} Hari</p>
             </div>
 
             <div className="bg-white p-6 border border-stone-300 rounded-sm space-y-4 shadow-sm">
@@ -101,7 +110,11 @@ export default function CheckoutPage() {
               {Object.entries(groupedOrders).map(([vendorName, items]) => {
                 const isVendorPaid = paidVendors.includes(vendorName);
                 const deliveryType = deliveryOptions[vendorName] || "pickup";
-                const itemsTotal = items.reduce((sum, i) => sum + i.price, 0);
+                
+                // FIX: Kalkulasi Harga x Jumlah Hari
+                const itemsTotalPerDay = items.reduce((sum, i) => sum + i.price, 0);
+                const itemsTotal = itemsTotalPerDay * totalDays;
+                
                 const shippingFee = deliveryType === "delivery" ? 15000 : 0;
                 const grandTotal = itemsTotal + shippingFee;
 
@@ -114,38 +127,40 @@ export default function CheckoutPage() {
                       {isVendorPaid && <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold uppercase rounded-sm flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Lunas</span>}
                     </div>
 
-                    <div className="space-y-6">
-                      <div>
-                        <h4 className="text-xs font-mono font-bold text-stone-500 mb-2 uppercase">Daftar Barang:</h4>
-                        <ul className="space-y-2">
-                          {items.map((item) => (
-                            <li key={item.id} className="flex justify-between text-sm font-bold text-stone-800">
-                              <span>{item.name}</span>
-                              <span>Rp {item.price.toLocaleString("id-ID")}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {!isVendorPaid && (
-                        <div className="space-y-3">
-                          <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                              <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
-                              <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko (Gratis)
-                            </label>
-                            <label className="flex items-center gap-2 text-sm cursor-pointer">
-                              <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
-                              <Truck className="w-4 h-4 text-stone-600" /> Diantar (Rp 15.000)
-                            </label>
-                          </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="text-xs font-mono font-bold text-stone-500 mb-2 uppercase">Daftar Barang:</h4>
+                          <ul className="space-y-2">
+                            {items.map((item) => (
+                              <li key={item.id} className="flex justify-between text-sm font-bold text-stone-800">
+                                <span>{item.name}</span>
+                                <span>Rp {item.price.toLocaleString("id-ID")} <span className="text-[10px] font-normal text-stone-500">/hari</span></span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      )}
+
+                        {!isVendorPaid && (
+                          <div className="space-y-3">
+                            <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
+                            <div className="flex gap-4">
+                              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
+                                <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko
+                              </label>
+                              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                                <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
+                                <Truck className="w-4 h-4 text-stone-600" /> Diantar (Rp 15.000)
+                              </label>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       <div className="bg-[#f9f8f3] p-5 rounded-sm border border-stone-200 flex flex-col justify-between">
                         <div className="space-y-2 text-sm mb-6">
-                          <div className="flex justify-between text-stone-600"><span>Subtotal Alat:</span><span>Rp {itemsTotal.toLocaleString("id-ID")}</span></div>
+                          <div className="flex justify-between text-stone-600"><span>Subtotal ({totalDays} Hari):</span><span>Rp {itemsTotal.toLocaleString("id-ID")}</span></div>
                           <div className="flex justify-between text-stone-600"><span>Ongkos Kirim:</span><span>Rp {shippingFee.toLocaleString("id-ID")}</span></div>
                           <div className="flex justify-between font-extrabold text-lg text-[#1d3a28] pt-2 border-t border-stone-300">
                             <span>Total Bayar:</span><span>Rp {grandTotal.toLocaleString("id-ID")}</span>

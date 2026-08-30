@@ -22,7 +22,7 @@ interface BookingContextType {
   updateGuideStatus: (requestId: string, status: "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI") => void;
   payGuideRequest: (requestId: string) => void;
   cancelGuideRequest: (requestId: string) => void;
-  completeCheckout: (startDate: string, endDate: string, clientName: string, userId: string) => Promise<void>;
+  completeCheckout: (startDate: string, endDate: string, clientName: string, userId: string, totalDays: number) => Promise<void>;
   updateStoreOrderStatus: (orderId: string, status: "DIGUNAKAN" | "SELESAI", photoBefore?: string, photoAfter?: string) => void;
   reportDamageDispute: (orderId: string, photoBefore: string, photoAfter: string, claimAmount: number) => void;
   resolveDispute: (disputeId: string, action: "DISETUJUI" | "DITOLAK") => void;
@@ -74,8 +74,8 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const toggleTool = (tool: ToolOrderItem) => setSelectedTools((prev) => prev.some((t) => t.id === tool.id) ? prev.filter((t) => t.id !== tool.id) : [...prev, tool]);
   const clearBooking = () => setSelectedTools([]);
 
-  // FUNGSI CHECKOUT REAL KE SUPABASE
-  const completeCheckout = async (startDate: string, endDate: string, clientName: string, userId: string) => {
+  // FIX: FUNGSI CHECKOUT REAL KE SUPABASE (DENGAN KALKULASI HARI)
+  const completeCheckout = async (startDate: string, endDate: string, clientName: string, userId: string, totalDays: number) => {
     if (!supabaseUrl || !userId) return;
 
     const grouped = selectedTools.reduce((acc, item) => {
@@ -88,22 +88,25 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
     for (const [ownerName, items] of Object.entries(grouped)) {
       const orderId = `ORD-${Date.now().toString().slice(-4)}`;
-      const totalPrice = items.reduce((sum, i) => sum + i.price, 0);
+      // Kalkulasi Harga x Jumlah Hari
+      const totalPrice = items.reduce((sum, i) => sum + (i.price * totalDays), 0);
 
       // 1. Cari Vendor ID berdasarkan nama toko
       const { data: vendorData } = await supabase.from("vendors").select("id").eq("business_name", ownerName).single();
       
       if (vendorData) {
         // 2. Insert ke tabel bookings
-        const { data: bookingData } = await supabase.from("bookings").insert([{
+        const { data: bookingData, error: bookingError } = await supabase.from("bookings").insert([{
           customer_id: userId,
           vendor_id: vendorData.id,
           total_amount: totalPrice,
-          status: "paid",
+          status: "LUNAS",
           qr_code_token: `TRX-${orderId}`,
           start_date: startDate,
           end_date: endDate
         }]).select("id").single();
+
+        if (bookingError) console.error("Booking Insert Error:", bookingError);
 
         if (bookingData) {
           // 3. Insert ke booking_tool_items & Kurangi Stok

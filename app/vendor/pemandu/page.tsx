@@ -8,6 +8,7 @@ import { useBooking } from "@/lib/context/booking-context";
 import { useAuth } from "@/lib/context/auth-context";
 import { MessageSquare, Check, X, Compass, ShieldAlert, Settings } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
+import { Toast, ToastType } from "@/components/ui/toast";
 
 export default function PemanduDashboardPage() {
   const router = useRouter();
@@ -15,11 +16,19 @@ export default function PemanduDashboardPage() {
   const { guideRequests, updateGuideStatus } = useBooking();
   const [activeTab, setActiveTab] = React.useState<"permintaan" | "profil">("permintaan");
 
-  // State Form Profil Pemandu
   const [rate, setRate] = React.useState("150000");
   const [languages, setLanguages] = React.useState("Bahasa Indonesia");
   const [specialty, setSpecialty] = React.useState("Ternate");
   const [isSaving, setIsSaving] = React.useState(false);
+
+  // Toast State
+  const [toastMsg, setToastMsg] = React.useState("");
+  const [toastType, setToastType] = React.useState<ToastType>("info");
+  const [isToastVisible, setIsToastVisible] = React.useState(false);
+
+  const showToast = (msg: string, type: ToastType) => {
+    setToastMsg(msg); setToastType(type); setIsToastVisible(true);
+  };
 
   if (isLoaded && (!user || user.role !== "pemandu")) {
     return (
@@ -35,26 +44,11 @@ export default function PemanduDashboardPage() {
     );
   }
 
-  if (isLoaded && user?.status === "pending_approval") {
-    return (
-      <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
-        <Navbar />
-        <div className="max-w-md mx-auto bg-white p-8 rounded-sm border border-stone-300 shadow-lg mt-12 space-y-4">
-          <Compass className="w-12 h-12 text-[#c5922e] mx-auto" />
-          <h2 className="text-2xl font-extrabold">Menunggu Verifikasi</h2>
-          <p className="text-xs text-stone-600">Akun Mitra Anda sedang dalam proses verifikasi oleh SuperAdmin.</p>
-          <button onClick={() => router.push("/")} className="bg-[#1d3a28] text-white px-6 py-2.5 rounded-sm font-bold text-xs uppercase tracking-wider cursor-pointer">Kembali ke Beranda</button>
-        </div>
-      </main>
-    );
-  }
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     const supabase = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
     
-    // Dapatkan vendor_id
     const { data: vendorData } = await supabase.from("vendors").select("id").eq("profile_id", user?.id).single();
     if (vendorData) {
       await supabase.from("guide_profiles").update({
@@ -62,7 +56,7 @@ export default function PemanduDashboardPage() {
         languages: languages,
         specialty_spots: [specialty]
       }).eq("vendor_id", vendorData.id);
-      alert("Profil Pemandu berhasil diperbarui!");
+      showToast("Profil Pemandu berhasil diperbarui!", "success");
     }
     setIsSaving(false);
   };
@@ -148,6 +142,7 @@ export default function PemanduDashboardPage() {
           </div>
         )}
       </div>
+      <Toast message={toastMsg} type={toastType} isVisible={isToastVisible} onClose={() => setIsToastVisible(false)} />
     </main>
   );
 }
