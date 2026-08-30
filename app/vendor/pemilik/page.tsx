@@ -56,13 +56,10 @@ export default function PemilikDashboardPage() {
       if (vendor) {
         setVendorName(vendor.business_name);
         
-        // FIX: Gunakan relasi eksplisit customer_id untuk menarik nama penyewa
+        // FIX: Gunakan query join standar yang lebih aman dari error cache
         const { data: bookings, error } = await supabase
           .from("bookings")
-          .select(`
-            *,
-            customer:profiles!customer_id(full_name)
-          `)
+          .select("*, profiles(full_name)")
           .eq("vendor_id", vendor.id)
           .order("created_at", { ascending: false });
           
@@ -160,8 +157,8 @@ export default function PemilikDashboardPage() {
               realOrders.map((ord) => (
                 <div key={ord.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-none flex justify-between items-center text-xs">
                   <div>
-                    {/* FIX: Tampilkan nama penyewa dari relasi customer */}
-                    <p className="font-bold text-sm text-stone-900">Penyewa: {ord.customer?.full_name || "Wisatawan"}</p>
+                    {/* FIX: Tampilkan nama penyewa dari relasi profiles standar */}
+                    <p className="font-bold text-sm text-stone-900">Penyewa: {ord.profiles?.full_name || "Wisatawan"}</p>
                     <p className="text-stone-600 font-mono">Token: {ord.qr_code_token} • Jadwal: {ord.start_date} s/d {ord.end_date}</p>
                     <span className="font-bold text-[#1d3a28] mt-1 inline-block uppercase">Status: {ord.status}</span>
                   </div>
