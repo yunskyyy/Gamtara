@@ -37,7 +37,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={defaultHover}
         whileTap={defaultTap}
         className={cn(
-          "inline-flex items-center justify-center rounded-xl transition-colors focus-visible:outline-none cursor-pointer select-none",
+          "inline-flex items-center justify-center rounded-none transition-colors focus-visible:outline-none cursor-pointer select-none",
           variantStyles[variant],
           sizeStyles[size],
           className

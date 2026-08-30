@@ -18,7 +18,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
         ref={ref}
         whileHover={motionHover}
         className={cn(
-          "rounded-sm border border-stone-800 bg-[#f5f3ec] p-5 shadow-lg font-sans text-stone-900 transition-all duration-200",
+          "rounded-none border border-stone-800 bg-[#f5f3ec] p-5 shadow-lg font-sans text-stone-900 transition-all duration-200",
           isInteractive && "hover:border-emerald-800 cursor-pointer",
           className
         )}

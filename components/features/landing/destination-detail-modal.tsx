@@ -48,8 +48,8 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
   return (
     <AnimatePresence mode="wait">
       <div key={`modal-bg-${destination.id}`} className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
-        <motion.div key={`modal-box-${destination.id}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-sm shadow-2xl max-h-[90vh] overflow-y-auto">
-          <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-sm bg-stone-900 text-white hover:bg-[#1d3a28] transition-colors cursor-pointer border border-stone-800">
+        <motion.div key={`modal-box-${destination.id}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="relative w-full max-w-4xl bg-[#f5f3ec] text-stone-900 border border-stone-300 rounded-none shadow-2xl max-h-[90vh] overflow-y-auto">
+          <button onClick={onClose} className="absolute top-6 right-6 z-20 p-2 rounded-none bg-stone-900 text-white hover:bg-[#1d3a28] transition-colors cursor-pointer border border-stone-800">
             <X className="w-4 h-4" />
           </button>
 
@@ -57,7 +57,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
             <img src={destination.img} alt={destination.title} className="w-full h-full object-cover opacity-90" />
             <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/30 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6 text-white">
-              <span className="font-mono text-[11px] px-3 py-1 rounded-sm bg-[#1d3a28] text-stone-100 uppercase tracking-widest mb-2 inline-block">
+              <span className="font-mono text-[11px] px-3 py-1 rounded-none bg-[#1d3a28] text-stone-100 uppercase tracking-widest mb-2 inline-block">
                 {destination.tag}
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold">{destination.title}</h2>
@@ -71,14 +71,14 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                 {(destination.suggestedTools || []).map((tool, idx) => {
                   const isSelected = selectedTools.some((t) => t.id === tool.id);
                   return (
-                    <div key={`modal-tool-${tool.id}-${idx}`} className={`flex items-center gap-4 p-3 rounded-sm border transition-all ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
-                      <img src={tool.img} alt={tool.name} className="w-14 h-14 rounded-sm object-cover border border-stone-300" />
+                    <div key={`modal-tool-${tool.id}-${idx}`} className={`flex items-center gap-4 p-3 rounded-none border transition-all ${isSelected ? "bg-[#1d3a28]/10 border-[#1d3a28]" : "bg-white border-stone-300"}`}>
+                      <img src={tool.img} alt={tool.name} className="w-14 h-14 rounded-none object-cover border border-stone-300" />
                       <div className="flex-1">
                         <h4 className="font-bold text-sm text-stone-900">{tool.name}</h4>
                         <p className="text-[#1d3a28] font-mono text-xs font-bold mt-0.5">Rp {(tool.price ?? 0).toLocaleString("id-ID")} / hari</p>
                       </div>
                       {(!user || isCustomer) && (
-                        <button onClick={() => handleSelectTool(tool)} className={`px-3.5 py-1.5 rounded-sm font-mono text-xs uppercase font-bold cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-stone-900 text-white hover:bg-[#1d3a28] border-stone-900"}`}>
+                        <button onClick={() => handleSelectTool(tool)} className={`px-3.5 py-1.5 rounded-none font-mono text-xs uppercase font-bold cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-stone-900 text-white hover:bg-[#1d3a28] border-stone-900"}`}>
                           {isSelected ? <Check className="w-4 h-4" /> : "Pilih"}
                         </button>
                       )}
@@ -96,7 +96,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                   const isAvailable = guide.status === "available" || guide.status === "Tersedia";
 
                   return (
-                    <div key={`modal-guide-${guide.id}-${idx}`} className={`flex items-center justify-between p-4 rounded-sm border bg-white border-stone-300`}>
+                    <div key={`modal-guide-${guide.id}-${idx}`} className={`flex items-center justify-between p-4 rounded-none border bg-white border-stone-300`}>
                       <div className="flex items-center gap-3">
                         <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-full object-cover border border-stone-300" />
                         <div>
@@ -109,7 +109,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                         activeReq ? (
                            <span className="text-[9px] font-bold text-[#c5922e] uppercase font-mono px-2">Diminta</span>
                         ) : (
-                          <button disabled={!isAvailable} onClick={() => handleRequestGuide(guide)} className={`px-2.5 py-1.5 rounded-sm text-[10px] font-mono uppercase tracking-wider font-bold border ${!isAvailable ? "bg-stone-200 text-stone-500 border-stone-300 cursor-not-allowed" : "bg-[#1d3a28] text-white border-[#1d3a28] cursor-pointer"}`}>
+                          <button disabled={!isAvailable} onClick={() => handleRequestGuide(guide)} className={`px-2.5 py-1.5 rounded-none text-[10px] font-mono uppercase tracking-wider font-bold border ${!isAvailable ? "bg-stone-200 text-stone-500 border-stone-300 cursor-not-allowed" : "bg-[#1d3a28] text-white border-[#1d3a28] cursor-pointer"}`}>
                             {!isAvailable ? "Sibuk" : <Send className="w-3.5 h-3.5"/>}
                           </button>
                         )

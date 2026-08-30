@@ -49,20 +49,20 @@ export default function ToolsCatalogPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-between">
             <div className="flex gap-2 overflow-x-auto pb-2 text-xs font-semibold">
               {["Semua", "Camping", "Bahari", "Fotografi", "Hiking"].map((cat) => (
-                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-sm uppercase tracking-wider transition-colors cursor-pointer border shrink-0 ${selectedCategory === cat ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-white text-stone-700 border-stone-300"}`}>
+                <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-none uppercase tracking-wider transition-colors cursor-pointer border shrink-0 ${selectedCategory === cat ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-white text-stone-700 border-stone-300"}`}>
                   {cat}
                 </button>
               ))}
             </div>
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3 text-stone-400" />
-              <input type="text" placeholder="Cari peralatan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 bg-white border border-stone-300 rounded-sm text-xs w-full sm:w-64 focus:outline-none focus:border-[#1d3a28]" />
+              <input type="text" placeholder="Cari peralatan..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 bg-white border border-stone-300 rounded-none text-xs w-full sm:w-64 focus:outline-none focus:border-[#1d3a28]" />
             </div>
           </div>
           <div className="flex items-center gap-2 overflow-x-auto text-xs">
             <span className="font-mono font-bold text-stone-600 shrink-0 flex items-center gap-1"><Store className="w-3.5 h-3.5 text-[#1d3a28]" /> Toko Pemilik:</span>
             {ownerList.map((owner) => (
-              <button key={owner} onClick={() => setSelectedOwner(owner)} className={`px-3 py-1 rounded-sm text-[11px] font-medium transition-colors cursor-pointer border shrink-0 ${selectedOwner === owner ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-600 border-stone-200"}`}>
+              <button key={owner} onClick={() => setSelectedOwner(owner)} className={`px-3 py-1 rounded-none text-[11px] font-medium transition-colors cursor-pointer border shrink-0 ${selectedOwner === owner ? "bg-stone-800 text-white border-stone-800" : "bg-white text-stone-600 border-stone-200"}`}>
                 {owner}
               </button>
             ))}
@@ -76,8 +76,8 @@ export default function ToolsCatalogPage() {
             {filtered.map((tool) => {
               const isSelected = selectedTools.some((t) => t.id === tool.id);
               return (
-                <div key={tool.id} className="bg-white border border-stone-300 rounded-sm p-5 shadow-sm hover:shadow-md transition-shadow text-center group">
-                  <div onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, ownerName: tool.ownerName, categoryOrLang: tool.category, rating: tool.rating })} className="relative w-28 h-28 rounded-sm overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
+                <div key={tool.id} className="bg-white border border-stone-300 rounded-none p-5 shadow-sm hover:shadow-md transition-shadow text-center group">
+                  <div onClick={() => setPreviewData({ type: "tool", id: tool.id, name: tool.name, price: tool.price, img: tool.img, ownerName: tool.ownerName, categoryOrLang: tool.category, rating: tool.rating })} className="relative w-28 h-28 rounded-none overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
                     <img src={tool.img} alt={tool.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
                   </div>
@@ -88,7 +88,7 @@ export default function ToolsCatalogPage() {
                     <span>{tool.rentCount}x Disewa</span>
                     <span className="text-[#1d3a28] font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Tersedia</span>
                   </div>
-                  <button onClick={() => handleSelectTool(tool)} className={`w-full py-2.5 rounded-sm text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 ${isSelected ? "bg-[#1d3a28] text-white" : "bg-stone-900 text-white hover:bg-[#1d3a28]"}`}>
+                  <button onClick={() => handleSelectTool(tool)} className={`w-full py-2.5 rounded-none text-xs uppercase tracking-wider font-bold transition-colors cursor-pointer flex items-center justify-center gap-2 ${isSelected ? "bg-[#1d3a28] text-white" : "bg-stone-900 text-white hover:bg-[#1d3a28]"}`}>
                     {isSelected ? <><Check className="w-4 h-4" /> TERPILIH</> : "PILIH ALAT"}
                   </button>
                 </div>
