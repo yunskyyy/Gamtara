@@ -15,11 +15,6 @@ export function Navbar() {
 
   const isAdmin = user?.role === "admin";
 
-  // Fungsi untuk mengambil inisial nama (Misal: "Wisatawan Subur" -> "WS")
-  const getInitials = (name: string) => {
-    return name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
-  };
-
   return (
     <>
       <motion.header className="fixed top-0 left-0 right-0 z-40 flex flex-col items-center pt-4 px-4 pointer-events-none">
@@ -46,7 +41,7 @@ export function Navbar() {
             {user ? (
               <div className="hidden md:flex items-center">
                 <Link href="/profile" className="w-9 h-9 rounded-none overflow-hidden border-2 border-stone-300 hover:border-[#1d3a28] transition-colors cursor-pointer shadow-sm bg-stone-200 flex items-center justify-center text-[#1d3a28] font-bold text-xs">
-                  {user.avatar ? <img src={user.avatar} alt="Profil" className="w-full h-full object-cover" /> : getInitials(user.name)}
+                  <img src={user.avatar || "/default-avatar.png"} alt="Profil" className="w-full h-full object-cover" />
                 </Link>
               </div>
             ) : (
@@ -78,7 +73,7 @@ export function Navbar() {
               {user ? (
                 <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 text-[#1d3a28] flex items-center gap-2">
                   <div className="w-6 h-6 rounded-none bg-stone-200 flex items-center justify-center text-[8px] font-bold border border-stone-300">
-                    {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : getInitials(user.name)}
+                    <img src={user.avatar || "/default-avatar.png"} className="w-full h-full object-cover" />
                   </div>
                   Profil Saya
                 </Link>

@@ -1,5 +1,5 @@
 ﻿import { createBrowserClient } from "@supabase/ssr";
-import { calculateDistanceKm, TERNATE_CENTER_LAT, TERNATE_CENTER_LNG } from "./geo-utils";
+import { calculateDistanceKm, TERNATE_CENTER_LAT, TERNATE_CENTER_LNG } from "@/lib/utils/geo-utils";
 
 function getClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
