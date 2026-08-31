@@ -33,8 +33,8 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-
-
+// FIX: Gunakan Ikon SVG Default (Bukan Foto Orang Bule)
+const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d3a28' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
@@ -53,40 +53,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
   const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
+  const fetchProfile = async (userId: string, email: string) => {
+    if (!supabaseUrl) return;
+    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
+    if (data) {
+      setUser({
+        id: data.id, name: data.full_name, email: email, phone: data.phone || "",
+        origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
+        role: data.role as UserRole, status: data.status as AccountStatus || "approved", 
+        avatar: data.avatar_url || DEFAULT_AVATAR,
+      });
+    }
+  };
+
   const fetchAllUsers = async () => {
     if (!supabaseUrl) return;
     const { data } = await supabase.from("profiles").select("*");
     if (data) {
       setRegisteredUsers(data.map((d: any) => {
-        const defaultAvatar = "";
         return {
           id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
           origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
           role: d.role as UserRole, status: d.status as AccountStatus || "approved", 
-          avatar: d.avatar_url || defaultAvatar
+          avatar: d.avatar_url || DEFAULT_AVATAR
         };
       }));
-    }
-  };
-
-  const fetchProfile = async (userId: string, email: string) => {
-    if (!supabaseUrl) return;
-    const { data } = await supabase.from("profiles").select("*").eq("id", userId).single();
-    if (data) {
-      const defaultAvatar = "";
-      const userRole = data.role as UserRole;
-      
-      setUser({
-        id: data.id, name: data.full_name, email: email, phone: data.phone || "",
-        origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
-        role: userRole, status: data.status as AccountStatus || "approved", 
-        avatar: data.avatar_url || defaultAvatar,
-      });
-
-      // FIX: Jika role adalah admin, tarik semua data user untuk Dashboard Admin
-      if (userRole === "admin") {
-        await fetchAllUsers();
-      }
     }
   };
 
@@ -96,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email!);
+        if (session.user.email === "admin.gamtara@gmail.com") await fetchAllUsers();
       }
       setIsLoaded(true);
     };
@@ -108,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) { showToast(error.message, "error"); return false; }
     if (data.user) {
       await fetchProfile(data.user.id, data.user.email!);
+      if (email === "admin.gamtara@gmail.com") await fetchAllUsers();
       showToast("Berhasil Masuk!", "success");
       return true;
     }
@@ -122,12 +115,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (authData.user) {
       const initialStatus = profileData.role === "customer" ? "approved" : "pending_approval";
-      const defaultAvatar = "";
       
       const { error: profileError } = await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
         origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus,
-        avatar_url: defaultAvatar
+        avatar_url: DEFAULT_AVATAR
       }]);
 
       if (profileError) { showToast("Gagal menyimpan profil: " + profileError.message, "error"); return false; }
@@ -146,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const langs = profileData.languages || "Bahasa Indonesia";
           const { error: guideError } = await supabase.from("guide_profiles").insert([{ 
             vendor_id: vendorData.id, full_name: profileData.name, languages: langs, 
-            specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: defaultAvatar 
+            specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: DEFAULT_AVATAR 
           }]);
           if (guideError) { console.error("Guide Insert Error:", guideError); }
         }

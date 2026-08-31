@@ -101,7 +101,7 @@ export default function ProfilePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-4 bg-white border border-stone-300 rounded-none p-6 text-center space-y-4">
-            <div className="relative w-28 h-28 mx-auto rounded-full overflow-hidden bg-stone-100 border border-stone-300 group">
+            <div className="relative w-28 h-28 mx-auto rounded-sm overflow-hidden bg-stone-100 border border-stone-300 group">
               <img src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop"} alt={user.name} className="w-full h-full object-cover" />
               <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-mono cursor-pointer disabled:cursor-wait">
                 <Upload className="w-4 h-4 mb-1" /><span>{isUploading ? "Mengunggah..." : "Ganti Foto"}</span>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
         {isLogoutModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
             <div className="bg-[#f4f2eb] p-8 rounded-none max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
-              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-2 border border-rose-200"><AlertTriangle className="w-6 h-6" /></div>
+              <div className="w-12 h-12 rounded-sm bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-2 border border-rose-200"><AlertTriangle className="w-6 h-6" /></div>
               <h3 className="font-extrabold text-lg text-stone-900">Konfirmasi Keluar</h3>
               <p className="text-xs text-stone-600">Apakah Anda yakin ingin keluar dari akun GAMTARA?</p>
               <div className="flex gap-3 pt-2">

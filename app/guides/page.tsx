@@ -83,7 +83,7 @@ export default function GuidesCatalogPage() {
 
               return (
                 <div key={guide.id} className="bg-white border border-stone-300 rounded-none p-5 shadow-sm hover:shadow-md transition-shadow text-center group">
-                  <div onClick={() => setPreviewData({ type: "guide", id: guide.id, name: guide.name, price: guide.price, img: guide.avatar, categoryOrLang: guide.lang, rating: guide.rating, desc: guide.desc })} className="relative w-24 h-24 rounded-full overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
+                  <div onClick={() => setPreviewData({ type: "guide", id: guide.id, name: guide.name, price: guide.price, img: guide.avatar, categoryOrLang: guide.lang, rating: guide.rating, desc: guide.desc })} className="relative w-24 h-24 rounded-sm overflow-hidden mx-auto mb-3 border border-stone-200 bg-stone-100 shadow-inner cursor-pointer">
                     <img src={guide.avatar} alt={guide.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"><Eye className="w-5 h-5" /></div>
                   </div>

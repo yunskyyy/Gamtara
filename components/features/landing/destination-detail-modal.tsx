@@ -98,7 +98,7 @@ export function DestinationDetailModal({ destination, onClose }: ModalProps) {
                   return (
                     <div key={`modal-guide-${guide.id}-${idx}`} className={`flex items-center justify-between p-4 rounded-none border bg-white border-stone-300`}>
                       <div className="flex items-center gap-3">
-                        <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-full object-cover border border-stone-300" />
+                        <img src={guide.avatar} alt={guide.name} className="w-12 h-12 rounded-sm object-cover border border-stone-300" />
                         <div>
                           <h4 className="font-bold text-sm text-stone-900">{guide.name}</h4>
                           <p className="text-stone-500 text-xs font-mono">{guide.lang}</p>
