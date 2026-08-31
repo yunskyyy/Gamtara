@@ -41,7 +41,15 @@ export function TourismProvider({ children }: { children: React.ReactNode }) {
         if (guidesData) setGuides(guidesData as GuideItem[]);
       } catch (error) { console.error(error); } finally { setIsLoading(false); }
     }
+    
     loadData();
+
+    // FIX: Auto-Refresh Data (Polling) setiap 15 detik di background
+    const interval = setInterval(() => {
+      loadData();
+    }, 15000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const destinations = React.useMemo(() => {

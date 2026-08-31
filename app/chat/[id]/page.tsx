@@ -30,10 +30,17 @@ export default function ChatRoomPage() {
       const { data: msgData } = await supabase.from("chat_messages").select("*").eq("order_or_request_id", id).order("created_at", { ascending: true });
       if (msgData) setMessages(msgData);
 
-      // Tarik Rincian Pesanan (Jika ini chat alat sewa)
+      // FIX: Sederhanakan Query untuk mencegah PGRST200
       if (id.startsWith("TRX-")) {
-        const { data: ordData } = await supabase.from("bookings").select("*, customer:profiles!customer_id(full_name), vendor:vendors(business_name), items:booking_tool_items(tool:tools(name))").eq("qr_code_token", id).single();
-        if (ordData) setOrderDetails(ordData);
+        const { data: ordData, error } = await supabase
+          .from("bookings")
+          .select("*, customer:profiles!customer_id(full_name)")
+          .eq("qr_code_token", id)
+          .single();
+          
+        if (!error && ordData) {
+          setOrderDetails(ordData);
+        }
       }
     };
 
@@ -61,7 +68,7 @@ export default function ChatRoomPage() {
     );
   }
 
-  const guideReq = guideRequests.find((r) => r.id === id);
+  const guideReq = guideRequests.find((r: any) => r.id === id);
   const isGuideChat = !!guideReq;
   
   let targetName = "Mitra GAMTARA";
@@ -71,9 +78,8 @@ export default function ChatRoomPage() {
     targetName = user.role === "pemandu" ? guideReq.clientName : guideReq.guideName;
     subtitle = `Destinasi: ${guideReq.selectedDestination}`;
   } else if (orderDetails) {
-    targetName = user.role === "pemilik" ? orderDetails.customer?.full_name : orderDetails.vendor?.business_name;
-    const itemNames = orderDetails.items?.map((i: any) => i.tool?.name).join(", ");
-    subtitle = `Barang: ${itemNames} | Total: Rp ${Number(orderDetails.total_amount).toLocaleString("id-ID")}`;
+    targetName = user.role === "pemilik" ? orderDetails.customer?.full_name : "Toko Alat Outdoor";
+    subtitle = `Total Transaksi: Rp ${Number(orderDetails.total_amount).toLocaleString("id-ID")}`;
   }
 
   const handleSend = async (e: React.FormEvent) => {
@@ -122,7 +128,7 @@ export default function ChatRoomPage() {
             {messages.length === 0 ? (
               <p className="text-center text-stone-500 font-mono mt-10">Belum ada pesan. Mulai percakapan sekarang.</p>
             ) : (
-              messages.map((msg) => (
+              messages.map((msg: any) => (
                 <div key={msg.id} className={`p-3.5 rounded-none max-w-[80%] space-y-1 ${msg.sender_name === user.name ? "ml-auto bg-[#1d3a28] text-white" : "bg-white border border-stone-300 text-stone-900"}`}>
                   <div className="flex justify-between items-center gap-4 text-[10px] opacity-75 font-mono">
                     <span className="font-bold">{msg.sender_name}</span>
