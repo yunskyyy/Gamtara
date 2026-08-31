@@ -21,7 +21,7 @@ export function ToolsFlatGallery() {
       setIsPromptOpen(true);
       return;
     }
-    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName, img: tool.img, vendorId: tool.vendorId });
+    toggleTool({ id: tool.id, name: tool.name, price: tool.price, ownerName: tool.ownerName, img: tool.img, vendorId: tool.vendorId, lat: tool.lat, lng: tool.lng });
   };
 
   return (

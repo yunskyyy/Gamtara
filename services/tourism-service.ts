@@ -1,34 +1,21 @@
 ﻿import { createBrowserClient } from "@supabase/ssr";
-import { calculateDistanceKm, TERNATE_CENTER_LAT, TERNATE_CENTER_LNG } from "@/lib/utils/geo-utils";
 
 function getClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  return createBrowserClient(supabaseUrl, supabaseKey);
+  return createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "");
 }
 
-export async function fetchRealTools(userLat?: number, userLng?: number) {
+export async function fetchRealTools() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return [];
   const supabase = getClient();
   const { data, error } = await supabase.from("tools").select("*, vendors(id, business_name, location, lat, lng, profile_id)");
   if (error || !data) return [];
-  
-  const uLat = userLat || TERNATE_CENTER_LAT;
-  const uLng = userLng || TERNATE_CENTER_LNG;
-
-  return data.map((t: any) => {
-    const vLat = t.vendors?.lat || TERNATE_CENTER_LAT;
-    const vLng = t.vendors?.lng || TERNATE_CENTER_LNG;
-    const dist = calculateDistanceKm(uLat, uLng, vLat, vLng);
-
-    return {
-      id: t.id, name: t.name, desc: t.description || "", category: t.category, price: Number(t.price), stock: t.stock,
-      vendorId: t.vendors?.id || "v-default", ownerName: t.vendors?.business_name || "Mitra", vendorName: t.vendors?.business_name || "Mitra",
-      loc: t.vendors?.location || "Ternate", location: t.vendors?.location || "Ternate",
-      dist: `${dist} KM`, rating: "4.9", rentCount: t.rent_count || 0,
-      lat: vLat, lng: vLng, img: t.img_url, profileId: t.vendors?.profile_id
-    };
-  });
+  return data.map((t: any) => ({
+    id: t.id, name: t.name, desc: t.description || "", category: t.category, price: Number(t.price), stock: t.stock,
+    vendorId: t.vendors?.id || "v-default", ownerName: t.vendors?.business_name || "Mitra", vendorName: t.vendors?.business_name || "Mitra",
+    loc: t.vendors?.location || "Ternate", location: t.vendors?.location || "Ternate",
+    dist: "2.4 KM", temp: "28°C", rating: "4.9", rentCount: t.rent_count || 0,
+    lat: t.vendors?.lat || 0.7893, lng: t.vendors?.lng || 127.3871, img: t.img_url, profileId: t.vendors?.profile_id
+  }));
 }
 
 export async function fetchRealGuides() {
@@ -63,4 +50,17 @@ export async function getVendorIdByProfile(profileId: string) {
   const supabase = getClient();
   const { data } = await supabase.from("vendors").select("id").eq("profile_id", profileId).single();
   return data?.id || null;
+}
+
+// FUNGSI ENTERPRISE: Panggil RPC Lock Stock
+export async function lockToolStock(toolId: string, startDate: string, endDate: string, customerId: string) {
+  const supabase = getClient();
+  const { data, error } = await supabase.rpc("check_and_lock_stock", {
+    p_tool_id: toolId,
+    p_start_date: startDate,
+    p_end_date: endDate,
+    p_customer_id: customerId
+  });
+  if (error) return { success: false, message: error.message };
+  return data; // { success: true/false, message: "..." }
 }

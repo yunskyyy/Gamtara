@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/features/landing/navbar";
 import { useBooking } from "@/lib/context/booking-context";
 import { useAuth } from "@/lib/context/auth-context";
-import { QrCode, CheckCircle2, Calendar, MapPin, Truck, Store } from "lucide-react";
+import { QrCode, CheckCircle2, Calendar, MapPin, Truck, Store, AlertTriangle } from "lucide-react";
+import { lockToolStock } from "@/services/tourism-service";
+import { calculateDistanceKm, TERNATE_CENTER_LAT, TERNATE_CENTER_LNG } from "@/lib/utils/geo-utils";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -22,6 +24,15 @@ export default function CheckoutPage() {
   const [payingVendor, setPayingVendor] = React.useState<string | null>(null);
   const [paidVendors, setPaidVendors] = React.useState<string[]>([]);
   const [isPaid, setIsPaid] = React.useState(false);
+  const [isLocking, setIsLocking] = React.useState(false);
+
+  // Simulasi Lokasi User (Penyewa)
+  const [userGeo, setUserGeo] = React.useState({ lat: TERNATE_CENTER_LAT, lng: TERNATE_CENTER_LNG });
+  React.useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => setUserGeo({ lat: pos.coords.latitude, lng: pos.coords.longitude }));
+    }
+  }, []);
 
   const totalDays = React.useMemo(() => {
     const start = new Date(startDate);
@@ -38,6 +49,27 @@ export default function CheckoutPage() {
     }, {} as Record<string, typeof selectedTools>);
   }, [selectedTools]);
 
+  // FUNGSI ENTERPRISE: Coba Lock Stok sebelum memunculkan QRIS
+  const handleInitiatePayment = async (vendorName: string, items: typeof selectedTools) => {
+    if (!user) return;
+    setIsLocking(true);
+
+    let allLocked = true;
+    for (const item of items) {
+      const res = await lockToolStock(item.id, startDate, endDate, user.id);
+      if (!res || !res.success) {
+        alert(`Gagal: ${item.name} sudah habis dipesan untuk tanggal tersebut!`);
+        allLocked = false;
+        break;
+      }
+    }
+
+    setIsLocking(false);
+    if (allLocked) {
+      setPayingVendor(vendorName); // Munculkan QRIS jika berhasil di-lock
+    }
+  };
+
   const handleSimulatePayment = (vendorName: string) => {
     setIsPaid(true);
     setTimeout(() => {
@@ -46,7 +78,6 @@ export default function CheckoutPage() {
       setIsPaid(false);
       
       if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-        // FIX TS2554: Mengirimkan 5 argumen lengkap termasuk totalDays
         completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "", totalDays);
         router.push("/profile");
       }
@@ -73,7 +104,6 @@ export default function CheckoutPage() {
         <div className="border-b border-stone-300 pb-6 mb-8">
           <span className="font-mono text-xs text-[#1d3a28] font-bold uppercase">// FASE 2: TRANSAKSI ALAT SEWA</span>
           <h1 className="text-4xl font-extrabold tracking-tight mt-1">Selesaikan Pesanan Sewa</h1>
-          <p className="text-sm text-stone-600 mt-2">Pesanan Anda dipisahkan berdasarkan Toko Pemilik Barang. Lakukan pembayaran untuk masing-masing toko.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -111,6 +141,12 @@ export default function CheckoutPage() {
               const shippingFee = deliveryType === "delivery" ? 15000 : 0;
               const grandTotal = itemsTotal + shippingFee;
 
+              // FUNGSI ENTERPRISE: Cek Jarak Radius 25KM
+              const vendorLat = items[0].lat || TERNATE_CENTER_LAT;
+              const vendorLng = items[0].lng || TERNATE_CENTER_LNG;
+              const distance = calculateDistanceKm(userGeo.lat, userGeo.lng, vendorLat, vendorLng);
+              const isDeliveryBlocked = distance > 25;
+
               return (
                 <div key={vendorName} className={`bg-white border rounded-none p-6 shadow-sm ${isVendorPaid ? "border-emerald-500 bg-emerald-50/50" : "border-stone-300"}`}>
                   <div className="flex justify-between items-center border-b border-stone-200 pb-4 mb-4">
@@ -136,15 +172,18 @@ export default function CheckoutPage() {
                     {!isVendorPaid && (
                       <div className="space-y-3">
                         <h4 className="text-xs font-mono font-bold text-stone-500 uppercase">Opsi Pengambilan:</h4>
-                        <div className="flex gap-4">
+                        <div className="flex flex-col gap-3">
                           <label className="flex items-center gap-2 text-sm cursor-pointer">
                             <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "pickup"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "pickup"}))} />
-                            Ambil di Toko
+                            <Store className="w-4 h-4 text-stone-600" /> Ambil di Toko (Jarak: {distance} KM)
                           </label>
-                          <label className="flex items-center gap-2 text-sm cursor-pointer">
-                            <input type="radio" name={`delivery-${vendorName}`} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
-                            Diantar (Rp 15.000)
+                          
+                          {/* BLOKIR DELIVERY JIKA > 25 KM */}
+                          <label className={`flex items-center gap-2 text-sm ${isDeliveryBlocked ? "text-stone-400 cursor-not-allowed" : "cursor-pointer"}`}>
+                            <input type="radio" name={`delivery-${vendorName}`} disabled={isDeliveryBlocked} checked={deliveryType === "delivery"} onChange={() => setDeliveryOptions(prev => ({...prev, [vendorName]: "delivery"}))} />
+                            <Truck className="w-4 h-4" /> Diantar (Rp 15.000)
                           </label>
+                          {isDeliveryBlocked && <p className="text-[10px] text-rose-600 font-bold flex items-center gap-1 ml-6"><AlertTriangle className="w-3 h-3"/> Jarak melebihi batas maksimal pengantaran (25 KM).</p>}
                         </div>
                       </div>
                     )}
@@ -159,8 +198,8 @@ export default function CheckoutPage() {
                       </div>
 
                       {!isVendorPaid ? (
-                        <button onClick={() => setPayingVendor(vendorName)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md">
-                          <QrCode className="w-4 h-4 text-[#c5922e]" /> Bayar Pesanan Ini
+                        <button onClick={() => handleInitiatePayment(vendorName, items)} disabled={isLocking} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md disabled:opacity-50">
+                          <QrCode className="w-4 h-4 text-[#c5922e]" /> {isLocking ? "Mengecek Ketersediaan..." : "Bayar Pesanan Ini"}
                         </button>
                       ) : (
                         <button disabled className="w-full py-3 bg-stone-200 text-stone-500 font-bold uppercase tracking-wider rounded-none cursor-not-allowed flex items-center justify-center gap-2">
@@ -178,13 +217,14 @@ export default function CheckoutPage() {
         {payingVendor && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm">
             <div className="bg-[#f4f2eb] p-8 rounded-none max-w-sm w-full text-center border border-stone-300 shadow-2xl space-y-6">
+              <div className="bg-amber-100 text-amber-800 p-2 text-[10px] font-bold uppercase border border-amber-300">Stok Terkunci Selama 15 Menit</div>
               <h3 className="font-extrabold text-base text-stone-900 uppercase font-mono">PEMBAYARAN QRIS</h3>
               <p className="text-sm font-bold text-[#1d3a28]">{payingVendor}</p>
               <div className="bg-white p-4 border border-stone-300 rounded-none inline-block">
                 <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=GAMTARA-PAYMENT" alt="QRIS Code" className="w-44 h-44 mx-auto" />
               </div>
-              <button onClick={() => handleSimulatePayment(payingVendor)} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-none font-mono text-xs uppercase tracking-wider font-bold cursor-pointer transition-all flex items-center justify-center gap-2">
-                Simulasi Bayar Sekarang
+              <button onClick={() => handleSimulatePayment(payingVendor)} disabled={isPaid} className="w-full py-3 bg-[#1d3a28] hover:bg-[#152a1b] text-white rounded-none font-mono text-xs uppercase tracking-wider font-bold cursor-pointer transition-all flex items-center justify-center gap-2">
+                {isPaid ? <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Pembayaran Berhasil...</> : "Simulasi Bayar Sekarang"}
               </button>
             </div>
           </div>

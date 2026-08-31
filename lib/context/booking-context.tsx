@@ -3,7 +3,7 @@
 import * as React from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
-export interface ToolOrderItem { id: string; name: string; price: number; ownerName: string; img: string; vendorId: string; }
+export interface ToolOrderItem { id: string; name: string; price: number; ownerName: string; img: string; vendorId: string; lat: number; lng: number; }
 export interface StoreOrderGroup { orderId: string; ownerName: string; clientName: string; items: ToolOrderItem[]; totalPrice: number; startDate: string; endDate: string; status: "LUNAS" | "DIGUNAKAN" | "SELESAI" | "SENGKETA"; photoBefore?: string; photoAfter?: string; }
 export interface GuideRequest { id: string; guideId: string; guideName: string; clientName: string; selectedDestination: string; tourDate: string; price: number; avatar: string; status: "MENUNGGU" | "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI"; }
 export interface ChatMessage { id: string; orderOrRequestId: string; sender: string; text: string; time: string; }

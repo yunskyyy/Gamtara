@@ -49,7 +49,7 @@ export function ToolsCarousel3D() {
   const handleToolClick = (e: React.MouseEvent, item: ToolItem) => {
     e.stopPropagation();
     if (!user) { setIsPromptOpen(true); return; }
-    toggleTool({ id: item.id, name: item.name, price: item.price, ownerName: item.ownerName, img: item.img, vendorId: item.vendorId });
+    toggleTool({ id: item.id, name: item.name, price: item.price, ownerName: item.ownerName, img: item.img, vendorId: item.vendorId, lat: item.lat, lng: item.lng });
   };
 
   if (total === 0) return null;
@@ -81,48 +81,42 @@ export function ToolsCarousel3D() {
 
           return (
             <motion.div
-              key={item.id} onClick={() => setProgress(index)}
-              animate={{ x: offset * 240, scale: scale, rotateY: offset * -12, opacity: opacity, zIndex: zIndex }}
-              transition={{ duration: 0.2, ease: "easeOut" }} style={{ transformStyle: "preserve-3d" }}
-              className={`absolute w-[320px] h-[480px] bg-white text-stone-900 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden border border-stone-800 ${absOffset < 0.5 ? "ring-2 ring-[#c5922e]" : "filter brightness-75"}`}
-            >
-              <div className="relative h-[45%] w-full bg-stone-200 border-b border-stone-300">
-                <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
-                <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-sm text-[10px] font-extrabold text-[#1d3a28] flex items-center gap-1 shadow-sm border border-stone-300">
-                  <Star className="w-3 h-3 fill-[#c5922e] text-[#c5922e]" /> {item.rating} ({item.rentCount}x)
-                </div>
-              </div>
+  key={item.id} onClick={() => setProgress(index)}
+  animate={{ x: offset * 240, scale: scale, rotateY: offset * -12, opacity: opacity, zIndex: zIndex }}
+  transition={{ duration: 0.2, ease: "easeOut" }} style={{ transformStyle: "preserve-3d" }}
+  className={`absolute w-[300px] h-[460px] bg-[#f4f2eb] text-stone-900 rounded-sm shadow-2xl border border-stone-800 flex flex-col overflow-hidden ${absOffset < 0.5 ? "ring-2 ring-[#1d3a28]" : "filter brightness-75"}`}
+>
+  {/* FOKUS UTAMA: Gambar Mendominasi 65% Kartu & Dicrop Konsisten */}
+  <div className="relative h-[65%] w-full bg-stone-200 border-b border-stone-800">
+    <img src={item.img} alt={item.name} className="w-full h-full object-cover pointer-events-none" />
+    <div className="absolute top-3 left-3 bg-[#f4f2eb] px-2.5 py-1 rounded-sm text-[10px] font-bold text-[#1d3a28] flex items-center gap-1 border border-stone-800">
+      ★ {item.rating} ({item.rentCount}x)
+    </div>
+  </div>
 
-              <div className="p-6 flex flex-col flex-1 bg-[#f5f3ec]">
-                <h3 className="font-extrabold text-xl text-stone-900 leading-tight mb-1">{item.name}</h3>
-                <p className="text-xs text-stone-500 line-clamp-2 mb-4 leading-relaxed">{item.desc}</p>
-                
-                <div className="space-y-2 mb-4">
-                  <p className="text-[10px] font-extrabold text-[#c5922e] uppercase tracking-wider bg-[#c5922e]/10 px-2 py-1 rounded-sm inline-block border border-[#c5922e]/20">
-                    {item.ownerName}
-                  </p>
-                  <div className="flex justify-between items-center text-[11px] text-stone-600 font-medium">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-[#1d3a28]"/> {item.loc}</span>
-                    <span className="bg-stone-200 px-2 py-0.5 rounded-sm border border-stone-300">{item.dist}</span>
-                  </div>
-                </div>
+  {/* KONTEN TEKS: Dirapatkan & Minimalis */}
+  <div className="p-4 flex flex-col flex-1 justify-between">
+    <div>
+      <h3 className="font-extrabold text-stone-900 text-lg leading-tight truncate">{item.name}</h3>
+      <p className="text-[#c5922e] text-[10px] font-bold uppercase tracking-wider mt-1 truncate">{item.ownerName}</p>
+    </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-4 text-center font-mono text-[10px]">
-                  <div className="bg-white border border-stone-300 p-1.5 rounded-sm"><span className="text-stone-500 block">KATEGORI</span><span className="font-bold text-[#1d3a28]">{item.category}</span></div>
-                  <div className="bg-white border border-stone-300 p-1.5 rounded-sm"><span className="text-stone-500 block">STOK</span><span className="font-bold text-[#1d3a28]">{item.stock} Unit</span></div>
-                </div>
+    <div className="grid grid-cols-2 gap-2 text-center font-mono text-[9px] border-y border-stone-300 py-2 my-2">
+      <div><span className="text-stone-500 block">KATEGORI</span><span className="font-bold text-[#1d3a28]">{item.category}</span></div>
+      <div><span className="text-stone-500 block">STOK</span><span className="font-bold text-[#1d3a28]">{item.stock} Unit</span></div>
+    </div>
 
-                <div className="mt-auto pt-4 border-t border-stone-300 flex justify-between items-end">
-                  <div>
-                    <span className="text-[10px] text-stone-400 block uppercase tracking-widest font-bold mb-0.5">Sewa / Hari</span>
-                    <span className="text-xl font-black text-[#1d3a28]">Rp {item.price.toLocaleString("id-ID")}</span>
-                  </div>
-                  <button onClick={(e) => handleToolClick(e, item)} className={`w-12 h-12 rounded-sm flex items-center justify-center transition-all cursor-pointer shadow-md border ${isSelected ? "bg-emerald-100 text-[#1d3a28] border-emerald-300" : "bg-[#1d3a28] text-white hover:bg-[#152a1b] border-[#1d3a28]"}`}>
-                    {isSelected ? <Check className="w-5 h-5" /> : <ShoppingBag className="w-5 h-5" />}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+    <div className="flex items-center justify-between">
+      <div>
+        <span className="text-[9px] text-stone-500 block font-mono uppercase">Sewa / Hari</span>
+        <span className="text-lg font-black text-[#1d3a28]">Rp {item.price.toLocaleString("id-ID")}</span>
+      </div>
+      <button onClick={(e) => handleToolClick(e, item)} className={`w-10 h-10 rounded-sm flex items-center justify-center transition-colors cursor-pointer border ${isSelected ? "bg-[#1d3a28] text-white border-[#1d3a28]" : "bg-transparent text-stone-900 hover:bg-stone-200 border-stone-900"}`}>
+        {isSelected ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
+      </button>
+    </div>
+  </div>
+</motion.div>
           );
         })}
       </motion.div>
