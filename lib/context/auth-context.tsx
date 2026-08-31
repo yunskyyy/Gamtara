@@ -33,8 +33,11 @@ interface AuthContextType {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
-// FIX: Gunakan Ikon SVG Default (Bukan Foto Orang Bule)
-const DEFAULT_AVATAR = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231d3a28' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>";
+// Fungsi untuk membuat Avatar Inisial Elegan
+export const getInitialsAvatar = (name: string) => {
+  const initials = name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
+  return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%231d3a28'/><text x='50' y='50' font-family='monospace' font-size='40' font-weight='bold' fill='%23c5922e' text-anchor='middle' dominant-baseline='central'>${initials}</text></svg>`;
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<UserProfile | null>(null);
@@ -61,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: data.id, name: data.full_name, email: email, phone: data.phone || "",
         origin: data.origin || "", address: data.address || "", gender: data.gender || "Laki-laki",
         role: data.role as UserRole, status: data.status as AccountStatus || "approved", 
-        avatar: data.avatar_url || DEFAULT_AVATAR,
+        avatar: data.avatar_url || getInitialsAvatar(data.full_name),
       });
     }
   };
@@ -75,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: d.id, name: d.full_name, email: d.email || "", phone: d.phone || "",
           origin: d.origin || "", address: d.address || "", gender: d.gender || "Laki-laki",
           role: d.role as UserRole, status: d.status as AccountStatus || "approved", 
-          avatar: d.avatar_url || DEFAULT_AVATAR
+          avatar: d.avatar_url || getInitialsAvatar(d.full_name)
         };
       }));
     }
@@ -119,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error: profileError } = await supabase.from("profiles").insert([{
         id: authData.user.id, email: profileData.email, full_name: profileData.name, phone: profileData.phone,
         origin: profileData.origin, address: profileData.address, gender: profileData.gender, role: profileData.role, status: initialStatus,
-        avatar_url: DEFAULT_AVATAR
+        avatar_url: getInitialsAvatar(profileData.name)
       }]);
 
       if (profileError) { showToast("Gagal menyimpan profil: " + profileError.message, "error"); return false; }
@@ -138,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const langs = profileData.languages || "Bahasa Indonesia";
           const { error: guideError } = await supabase.from("guide_profiles").insert([{ 
             vendor_id: vendorData.id, full_name: profileData.name, languages: langs, 
-            specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: DEFAULT_AVATAR 
+            specialty_spots: [profileData.origin], rate_per_day: 150000, avatar_url: getInitialsAvatar(profileData.name) 
           }]);
           if (guideError) { console.error("Guide Insert Error:", guideError); }
         }

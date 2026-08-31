@@ -6,13 +6,13 @@ import { fetchRealTools, fetchRealGuides } from "@/services/tourism-service";
 export interface ToolItem {
   id: string; name: string; desc: string; category: string; price: number; stock: number;
   vendorId: string; ownerName: string; vendorName: string; loc: string; location: string;
-  dist: string; temp: string; rating: string; rentCount: number; lat: number; lng: number; img: string;
+  dist: string; rating: string; rentCount: number; lat: number; lng: number; img: string; profileId?: string;
 }
 
 export interface GuideItem {
   id: string; name: string; desc: string; lang: string; origin: string; address: string; gender: "Laki-laki" | "Perempuan";
   specialtySpot?: string; specialtySpots: string[]; status: "available" | "busy" | "Tersedia" | "Sibuk";
-  price: number; rating: number; completedTours: number; avatar: string;
+  price: number; rating: number; completedTours: number; avatar: string; profileId?: string;
 }
 
 export interface DestinationData {
@@ -36,19 +36,22 @@ export function TourismProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     async function loadData() {
       try {
-        const [toolsData, guidesData] = await Promise.all([fetchRealTools(), fetchRealGuides()]);
+        // Simulasi ambil lokasi user (jika diizinkan)
+        let userLat, userLng;
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            userLat = pos.coords.latitude;
+            userLng = pos.coords.longitude;
+          });
+        }
+        const [toolsData, guidesData] = await Promise.all([fetchRealTools(userLat, userLng), fetchRealGuides()]);
         if (toolsData) setTools(toolsData as ToolItem[]);
         if (guidesData) setGuides(guidesData as GuideItem[]);
       } catch (error) { console.error(error); } finally { setIsLoading(false); }
     }
     
     loadData();
-
-    // FIX: Auto-Refresh Data (Polling) setiap 15 detik di background
-    const interval = setInterval(() => {
-      loadData();
-    }, 15000);
-
+    const interval = setInterval(() => { loadData(); }, 15000);
     return () => clearInterval(interval);
   }, []);
 
