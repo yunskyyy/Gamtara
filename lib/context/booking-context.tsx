@@ -4,7 +4,7 @@ import * as React from "react";
 import { createBrowserClient } from "@supabase/ssr";
 
 export interface ToolOrderItem { id: string; name: string; price: number; ownerName: string; img: string; vendorId: string; lat: number; lng: number; }
-export interface StoreOrderGroup { orderId: string; ownerName: string; clientName: string; items: ToolOrderItem[]; totalPrice: number; startDate: string; endDate: string; status: "LUNAS" | "DIGUNAKAN" | "SELESAI" | "SENGKETA"; photoBefore?: string; photoAfter?: string; }
+export interface StoreOrderGroup { orderId: string; ownerName: string; clientName: string; items: ToolOrderItem[]; totalPrice: number; startDate: string; endDate: string; status: "PENDING_PAYMENT" | "PAID" | "IN_USE" | "COMPLETED" | "DISPUTE_UNPAID" | "OVERDUE" | "CANCELLED_FORCE_MAJEURE"; photoBefore?: string; photoAfter?: string; }
 export interface GuideRequest { id: string; guideId: string; guideName: string; clientName: string; selectedDestination: string; tourDate: string; price: number; avatar: string; status: "MENUNGGU" | "DISETUJUI" | "DITOLAK" | "LUNAS" | "SELESAI"; }
 export interface ChatMessage { id: string; orderOrRequestId: string; sender: string; text: string; time: string; }
 export interface DisputeItem { id: string; orderId: string; itemName: string; ownerName: string; clientName: string; photoBefore: string; photoAfter: string; claimAmount: number; status: "INVESTIGASI" | "DISETUJUI" | "DITOLAK"; }
@@ -23,7 +23,7 @@ export interface BookingContextType {
   payGuideRequest: (requestId: string) => void;
   cancelGuideRequest: (requestId: string) => void;
   completeCheckout: (startDate: string, endDate: string, clientName: string, userId: string, totalDays: number) => Promise<boolean>;
-  updateStoreOrderStatus: (orderId: string, status: "DIGUNAKAN" | "SELESAI", photoBefore?: string, photoAfter?: string) => void;
+  updateStoreOrderStatus: (orderId: string, status: "IN_USE" | "COMPLETED", photoBefore?: string, photoAfter?: string) => void;
   reportDamageDispute: (orderId: string, photoBefore: string, photoAfter: string, claimAmount: number) => void;
   resolveDispute: (disputeId: string, action: "DISETUJUI" | "DITOLAK") => void;
   sendChatMessage: (orderOrRequestId: string, sender: string, text: string) => void;
@@ -76,37 +76,42 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
 
   const completeCheckout = async (startDate: string, endDate: string, clientName: string, userId: string, totalDays: number) => {
     if (!userId || selectedTools.length === 0) return false;
+
     const grouped = selectedTools.reduce((acc, item) => {
-      acc[item.ownerName] = acc[item.ownerName] || [];
-      acc[item.ownerName].push(item);
+      acc[item.vendorId] = acc[item.vendorId] || [];
+      acc[item.vendorId].push(item);
       return acc;
     }, {} as Record<string, ToolOrderItem[]>);
 
     try {
-      const newOrders: StoreOrderGroup[] = [];
-      for (const [ownerName, items] of Object.entries(grouped)) {
+      for (const [vendorId, items] of Object.entries(grouped)) {
         const totalPrice = items.reduce((sum, i) => sum + (i.price * totalDays), 0);
         const token = `TRX-${Date.now().toString().slice(-6)}`;
-        const vendorId = items[0].vendorId;
 
+        // FIX: Insert ke tabel 'bookings' yang baru
         const { data: bookingData, error: bookingError } = await supabase.from("bookings").insert([{
-          customer_id: userId, vendor_id: vendorId, total_amount: totalPrice, status: "LUNAS", qr_code_token: token, start_date: startDate, end_date: endDate
+          customer_id: userId,
+          store_id: vendorId,
+          total_amount: totalPrice,
+          status: "PAID",
+          qr_code_token: token
         }]).select("id").single();
 
-        if (bookingError) { alert("Gagal membuat pesanan: " + bookingError.message); return false; }
-
-        if (bookingData) {
-          for (const item of items) {
-            await supabase.from("booking_tool_items").insert([{ booking_id: bookingData.id, tool_id: item.id, start_date: startDate, end_date: endDate }]);
-            const { data: toolData } = await supabase.from("tools").select("stock, rent_count").eq("id", item.id).single();
-            if (toolData && toolData.stock > 0) {
-              await supabase.from("tools").update({ stock: toolData.stock - 1, rent_count: (toolData.rent_count || 0) + 1 }).eq("id", item.id);
-            }
-          }
+        if (bookingError) {
+          alert("Gagal membuat pesanan di database: " + bookingError.message);
+          return false;
         }
-        newOrders.push({ orderId: token, ownerName, clientName, items, totalPrice, startDate, endDate, status: "LUNAS" });
+
+        // FIX: Insert ke tabel 'booking_items' yang baru
+        for (const item of items) {
+          await supabase.from("booking_items").insert([{
+            booking_id: bookingData.id, 
+            product_id: item.id, 
+            start_date: startDate, 
+            end_date: endDate
+          }]);
+        }
       }
-      setStoreOrders((prev) => [...newOrders, ...prev]);
       setSelectedTools([]);
       return true;
     } catch (err) {
@@ -123,7 +128,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const payGuideRequest = (requestId: string) => updateGuideStatus(requestId, "LUNAS");
   const cancelGuideRequest = (requestId: string) => setGuideRequests((prev) => prev.filter((r) => r.id !== requestId));
 
-  const updateStoreOrderStatus = (orderId: string, status: "DIGUNAKAN" | "SELESAI", photoBefore?: string, photoAfter?: string) => {
+  const updateStoreOrderStatus = (orderId: string, status: "IN_USE" | "COMPLETED", photoBefore?: string, photoAfter?: string) => {
     setStoreOrders((prev) => prev.map((o) => {
       if (o.orderId === orderId) {
         const updated = { ...o, status };
@@ -138,7 +143,7 @@ export function BookingProvider({ children }: { children: React.ReactNode }) {
   const reportDamageDispute = (orderId: string, photoBefore: string, photoAfter: string, claimAmount: number) => {
     const ord = storeOrders.find((o) => o.orderId === orderId);
     if (!ord) return;
-    setStoreOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: "SENGKETA" } : o));
+    setStoreOrders((prev) => prev.map((o) => o.orderId === orderId ? { ...o, status: "DISPUTE_UNPAID" } : o));
     setDisputes((prev) => [...prev, { id: `DISP-${Date.now().toString().slice(-4)}`, orderId, itemName: ord.items.map((i) => i.name).join(", "), ownerName: ord.ownerName, clientName: ord.clientName, photoBefore, photoAfter, claimAmount, status: "INVESTIGASI" }]);
   };
 

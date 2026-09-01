@@ -45,7 +45,7 @@ export function VendorCheckoutInspectionModal({ isOpen, onClose, order }: { isOp
                 </label>
               </div>
               <div className="mt-4 p-3 bg-rose-100 border border-rose-300 rounded-sm flex justify-between items-center">
-                <span className="font-mono text-[10px] font-bold uppercase text-rose-800">TOTAL DENDA:</span>
+                <span className="font-mono text-[10px] font-bold uppercase text-rose-800">TOTAL DENDA KERUSAKAN:</span>
                 <span className="font-black text-lg text-rose-700 font-mono">Rp {totalDenda.toLocaleString("id-ID")}</span>
               </div>
             </div>
