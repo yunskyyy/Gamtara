@@ -13,7 +13,7 @@ export default function ChatRoomPage() {
   const router = useRouter();
   const id = params.id as string;
   const { user } = useAuth();
-  const { guideRequests } = useBooking();
+  const { storeOrders, guideRequests } = useBooking();
   
   const [inputText, setInputText] = React.useState("");
   const [messages, setMessages] = React.useState<any[]>([]);
@@ -54,11 +54,13 @@ export default function ChatRoomPage() {
   let isChatLocked = false;
 
   if (isGuideChat) {
-    targetName = user.role === "pemandu" ? guideReq.clientName : guideReq.guideName;
+    // FIX: Gunakan "vendor"
+    targetName = user.role === "vendor" ? guideReq.clientName : guideReq.guideName;
     subtitle = `Destinasi: ${guideReq.selectedDestination}`;
     if (guideReq.status === "SELESAI") isChatLocked = true;
   } else if (orderDetails) {
-    targetName = user.role === "pemilik" ? orderDetails.customer?.full_name : "Toko Alat Outdoor";
+    // FIX: Gunakan "vendor"
+    targetName = user.role === "vendor" ? orderDetails.customer?.full_name : "Toko Alat Outdoor";
     subtitle = `Total Transaksi: Rp ${Number(orderDetails.total_amount).toLocaleString("id-ID")}`;
     if (orderDetails.status === "SELESAI" || orderDetails.status === "SENGKETA") isChatLocked = true;
   }
@@ -81,7 +83,7 @@ export default function ChatRoomPage() {
           <ArrowLeft className="w-4 h-4" /> Kembali
         </button>
 
-        <div className="bg-white border border-stone-300 rounded-none overflow-hidden shadow-sm flex flex-col h-[580px]">
+        <div className="bg-white border border-stone-300 rounded-sm overflow-hidden shadow-sm flex flex-col h-[580px]">
           <div className="bg-[#1d3a28] text-white p-4 flex justify-between items-center border-b border-stone-800">
             <div>
               <span className="font-mono text-[10px] text-[#c5922e] uppercase font-bold tracking-widest block mb-1">// ROOM CHAT TERVERIFIKASI</span>
@@ -99,7 +101,7 @@ export default function ChatRoomPage() {
 
           <div className="flex-1 p-6 overflow-y-auto space-y-3 bg-[#f9f8f3] text-xs">
             {messages.map((msg: any) => (
-              <div key={msg.id} className={`p-3.5 rounded-none max-w-[80%] space-y-1 ${msg.sender_name === user.name ? "ml-auto bg-[#1d3a28] text-white" : "bg-white border border-stone-300 text-stone-900"}`}>
+              <div key={msg.id} className={`p-3.5 rounded-sm max-w-[80%] space-y-1 ${msg.sender_name === user.name ? "ml-auto bg-[#1d3a28] text-white" : "bg-white border border-stone-300 text-stone-900"}`}>
                 <div className="flex justify-between items-center gap-4 text-[10px] opacity-75 font-mono"><span className="font-bold">{msg.sender_name}</span><span>{formatTime(msg.created_at)}</span></div>
                 <p className="text-xs leading-relaxed">{msg.text}</p>
               </div>
@@ -108,8 +110,8 @@ export default function ChatRoomPage() {
           </div>
 
           <form onSubmit={handleSend} className="p-3 bg-white border-t border-stone-300 flex gap-2">
-            <input type="text" disabled={isChatLocked} placeholder={isChatLocked ? "Transaksi selesai. Chat dikunci." : "Ketik pesan koordinasi..."} value={inputText} onChange={(e) => setInputText(e.target.value)} className="flex-1 px-4 py-2.5 bg-[#f4f2eb] border border-stone-300 text-xs focus:outline-none focus:border-[#1d3a28] rounded-none disabled:opacity-50" />
-            <button type="submit" disabled={isChatLocked} className="px-5 py-2.5 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer rounded-none disabled:opacity-50">
+            <input type="text" disabled={isChatLocked} placeholder={isChatLocked ? "Transaksi selesai. Chat dikunci." : "Ketik pesan koordinasi..."} value={inputText} onChange={(e) => setInputText(e.target.value)} className="flex-1 px-4 py-2.5 bg-[#f4f2eb] border border-stone-300 text-xs focus:outline-none focus:border-[#1d3a28] rounded-sm disabled:opacity-50" />
+            <button type="submit" disabled={isChatLocked} className="px-5 py-2.5 bg-[#1d3a28] hover:bg-[#152a1b] text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer rounded-sm disabled:opacity-50">
               <span>Kirim</span><Send className="w-3.5 h-3.5" />
             </button>
           </form>

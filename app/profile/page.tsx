@@ -60,12 +60,10 @@ export default function ProfilePage() {
     alert("Pembayaran Pemandu Berhasil! Sesi Room Chat Telah Terbuka.");
   };
 
-  const myDisputes = disputes.filter(d => d.clientName === user.name && d.status === "DISETUJUI");
-
-  // FIX: Sesuaikan filter status dengan State Machine Enterprise
-  const activeOrders = storeOrders.filter(o => o.status === "PAID" || o.status === "IN_USE" || o.status === "OVERDUE");
-  const completedOrders = storeOrders.filter(o => o.status === "COMPLETED");
-  const disputeOrders = storeOrders.filter(o => o.status === "DISPUTE_UNPAID");
+  const myDisputes = disputes.filter((d: any) => d.clientName === user.name && d.status === "DISETUJUI");
+  const activeOrders = storeOrders.filter((o: any) => o.status === "PAID" || o.status === "IN_USE" || o.status === "OVERDUE");
+  const completedOrders = storeOrders.filter((o: any) => o.status === "COMPLETED");
+  const disputeOrders = storeOrders.filter((o: any) => o.status === "DISPUTE_UNPAID");
 
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
@@ -89,7 +87,7 @@ export default function ProfilePage() {
               <h3 className="font-extrabold text-rose-800 text-lg mb-1">Tagihan Ganti Rugi Kerusakan Alat</h3>
               <p className="text-sm text-rose-700 mb-3">SuperAdmin telah menyetujui klaim kerusakan alat dari pihak toko. Dana deposit Anda akan dipotong, atau Anda diwajibkan membayar tagihan berikut:</p>
               <ul className="space-y-2">
-                {myDisputes.map(d => (
+                {myDisputes.map((d: any) => (
                   <li key={d.id} className="text-xs font-mono bg-white p-3 rounded border border-rose-200">
                     <strong>{d.itemName}</strong> ({d.ownerName}) — Tagihan: <span className="text-rose-600 font-bold">Rp {d.claimAmount.toLocaleString("id-ID")}</span>
                   </li>
@@ -132,10 +130,9 @@ export default function ProfilePage() {
                     <Store className="w-4 h-4 text-[#1d3a28]" /> Riwayat Pesanan Alat Sewa
                   </h3>
 
-                  {/* Pesanan Aktif */}
                   <div>
                     <h4 className="font-bold text-xs text-[#1d3a28] mb-3">PESANAN AKTIF (LUNAS / DIGUNAKAN)</h4>
-                    {activeOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan aktif.</p> : activeOrders.map((ord) => (
+                    {activeOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan aktif.</p> : activeOrders.map((ord: any) => (
                       <div key={ord.orderId} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm space-y-2 text-xs mb-3">
                         <div className="flex justify-between items-center border-b border-stone-300 pb-2">
                           <span className="font-mono font-bold text-[#1d3a28]">{ord.orderId} — {ord.ownerName}</span>
@@ -154,10 +151,9 @@ export default function ProfilePage() {
                     ))}
                   </div>
 
-                  {/* Pesanan Selesai */}
                   <div>
                     <h4 className="font-bold text-xs text-stone-600 mb-3">PESANAN SELESAI</h4>
-                    {completedOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan selesai.</p> : completedOrders.map((ord) => (
+                    {completedOrders.length === 0 ? <p className="text-xs text-stone-500 font-mono">Tidak ada pesanan selesai.</p> : completedOrders.map((ord: any) => (
                       <div key={ord.orderId} className="p-4 bg-stone-100 border border-stone-200 rounded-sm space-y-2 text-xs mb-3 opacity-75">
                         <div className="flex justify-between items-center border-b border-stone-200 pb-2">
                           <span className="font-mono font-bold text-stone-600">{ord.orderId} — {ord.ownerName}</span>
@@ -168,11 +164,10 @@ export default function ProfilePage() {
                     ))}
                   </div>
 
-                  {/* Pesanan Sengketa */}
                   {disputeOrders.length > 0 && (
                     <div>
                       <h4 className="font-bold text-xs text-rose-600 mb-3">PESANAN DALAM SENGKETA</h4>
-                      {disputeOrders.map((ord) => (
+                      {disputeOrders.map((ord: any) => (
                         <div key={ord.orderId} className="p-4 bg-rose-50 border border-rose-200 rounded-sm space-y-2 text-xs mb-3">
                           <div className="flex justify-between items-center border-b border-rose-200 pb-2">
                             <span className="font-mono font-bold text-rose-700">{ord.orderId} — {ord.ownerName}</span>
@@ -189,7 +184,7 @@ export default function ProfilePage() {
                   <h3 className="font-bold text-xs font-mono uppercase tracking-wider text-stone-800 border-b border-stone-200 pb-3 flex items-center gap-2">
                     <Compass className="w-4 h-4 text-[#1d3a28]" /> Riwayat Permintaan Pemandu Wisata
                   </h3>
-                  {guideRequests.length === 0 ? <p className="text-xs text-stone-500 font-mono py-2">Belum ada permintaan pemandu dikirim.</p> : guideRequests.map((req) => (
+                  {guideRequests.length === 0 ? <p className="text-xs text-stone-500 font-mono py-2">Belum ada permintaan pemandu dikirim.</p> : guideRequests.map((req: any) => (
                     <div key={req.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
                       <div>
                         <p className="font-bold text-sm text-stone-900">{req.guideName} ({req.selectedDestination})</p>
@@ -206,12 +201,13 @@ export default function ProfilePage() {
               </>
             )}
 
-            {(user.role === "vendor" || user.role === "vendor") && (
+            {/* FIX: Gunakan "vendor" */}
+            {user.role === "vendor" && (
               <div className="bg-white border border-stone-300 rounded-sm p-8 text-center space-y-4">
                 <h3 className="text-base font-extrabold">Portal Operasional Mitra Aktif</h3>
                 <p className="text-xs text-stone-600">Kelola pesanan masuk, verifikasi foto alat sebelum/sesudah, dan konfirmasi jadwal klien di Dashboard Mitra.</p>
-                <Link href={user.role === "vendor" ? "/vendor/pemilik" : "/vendor/pemandu"} className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
-                  Buka Dashboard Operasional {user.role === "vendor" ? "Pemilik Barang" : "Pemandu Wisata"}
+                <Link href="/vendor/pemilik" className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
+                  Buka Dashboard Operasional Mitra
                 </Link>
               </div>
             )}
