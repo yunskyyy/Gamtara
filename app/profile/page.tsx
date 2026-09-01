@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/context/auth-context";
 import { useBooking } from "@/lib/context/booking-context";
 import { User, Phone, MapPin, Mail, Upload, Ticket, MessageSquare, Store, Compass, QrCode, X, LogOut, Shield, AlertTriangle } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
+import { getRoleLabel } from "@/lib/utils/role-mapper";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -110,7 +111,7 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-lg font-extrabold text-stone-900">{user.name}</h2>
               <span className="inline-block px-2.5 py-0.5 bg-[#1d3a28] text-white text-[10px] font-mono font-bold uppercase mt-1">
-                PERAN: {user.role.toUpperCase()}
+                PERAN: {getRoleLabel(user.role, "public").toUpperCase()}
               </span>
             </div>
 
@@ -204,8 +205,8 @@ export default function ProfilePage() {
             {/* FIX: Gunakan "vendor" */}
             {user.role === "vendor" && (
               <div className="bg-white border border-stone-300 rounded-sm p-8 text-center space-y-4">
-                <h3 className="text-base font-extrabold">Portal Operasional Mitra Aktif</h3>
-                <p className="text-xs text-stone-600">Kelola pesanan masuk, verifikasi foto alat sebelum/sesudah, dan konfirmasi jadwal klien di Dashboard Mitra.</p>
+                <h3 className="text-base font-extrabold">Portal Operasional Penyedia</h3>
+                <p className="text-xs text-stone-600">Kelola pesanan masuk, verifikasi foto alat sebelum/sesudah, dan konfirmasi jadwal klien di Dashboard Penyedia.</p>
                 <Link href="/vendor/pemilik" className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
                   Buka Dashboard Operasional Mitra
                 </Link>

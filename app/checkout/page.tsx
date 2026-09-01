@@ -78,7 +78,7 @@ export default function CheckoutPage() {
       setIsPaid(false);
       
       if (paidVendors.length + 1 === Object.keys(groupedOrders).length) {
-        completeCheckout(startDate, endDate, user?.name || "Wisatawan Subur", user?.id || "", totalDays);
+        completeCheckout(startDate, endDate, user?.name || getRoleLabel("customer", "transaction"), user?.id || "", totalDays);
         router.push("/profile");
       }
     }, 1500);

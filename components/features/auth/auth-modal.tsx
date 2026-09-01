@@ -80,7 +80,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   <label className="block font-bold text-stone-700 mb-1">Peran Akun</label>
                   <select value={role} onChange={(e) => setRole(e.target.value as any)} className="w-full px-3.5 py-2 rounded-sm bg-white border border-stone-300 font-bold text-stone-800">
                     <option value="customer">Wisatawan (Penyewa)</option>
-                    <option value="vendor">Mitra Pemilik Barang (Toko Alat)</option>
+                    <option value="vendor">Penyedia Alat</option>
                   </select>
                 </div>
                 <div><label className="block font-bold text-stone-700 mb-1">Nama Lengkap</label><input type="text" required value={name} onChange={(e) => setName(e.target.value)} className="w-full px-3.5 py-2 rounded-sm bg-white border border-stone-300" /></div>
@@ -89,7 +89,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                 {role === "vendor" && (
                   <div className="p-3 bg-[#1d3a28]/10 border border-[#1d3a28]/30 rounded-sm space-y-2">
-                    <p className="font-bold text-[#1d3a28] flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Syarat Pemilik Barang</p>
+                    <p className="font-bold text-[#1d3a28] flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5" /> Syarat Penyedia Alat</p>
                     <input type="text" required value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="Nama Toko / Usaha" className="w-full px-3 py-1.5 rounded-sm bg-white border border-stone-300 text-xs" />
                   </div>
                 )}
