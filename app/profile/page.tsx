@@ -206,12 +206,12 @@ export default function ProfilePage() {
               </>
             )}
 
-            {(user.role === "pemilik" || user.role === "pemandu") && (
+            {(user.role === "vendor" || user.role === "vendor") && (
               <div className="bg-white border border-stone-300 rounded-sm p-8 text-center space-y-4">
                 <h3 className="text-base font-extrabold">Portal Operasional Mitra Aktif</h3>
                 <p className="text-xs text-stone-600">Kelola pesanan masuk, verifikasi foto alat sebelum/sesudah, dan konfirmasi jadwal klien di Dashboard Mitra.</p>
-                <Link href={user.role === "pemilik" ? "/vendor/pemilik" : "/vendor/pemandu"} className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
-                  Buka Dashboard Operasional {user.role === "pemilik" ? "Pemilik Barang" : "Pemandu Wisata"}
+                <Link href={user.role === "vendor" ? "/vendor/pemilik" : "/vendor/pemandu"} className="inline-block px-6 py-3 bg-[#1d3a28] text-white text-xs font-bold font-mono uppercase tracking-wider rounded-sm">
+                  Buka Dashboard Operasional {user.role === "vendor" ? "Pemilik Barang" : "Pemandu Wisata"}
                 </Link>
               </div>
             )}

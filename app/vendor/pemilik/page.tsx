@@ -41,7 +41,7 @@ export default function PemilikDashboardPage() {
     fetchVendorDataAndOrders();
   }, [user]);
 
-  if (isLoaded && (!user || user.role !== "pemilik")) {
+  if (isLoaded && (!user || user.role !== "vendor")) {
     return (
       <main className="min-h-screen bg-[#f4f2eb] pt-32 px-4 text-center text-stone-900">
         <Navbar />

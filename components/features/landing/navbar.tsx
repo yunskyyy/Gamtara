@@ -32,8 +32,8 @@ export function Navbar() {
                 <li><Link href="/guides" className="hover:text-[#1d3a28] transition-colors">Pemandu Wisata</Link></li>
               </>
             )}
-            {user?.role === "pemilik" && <li><Link href="/vendor/pemilik" className="text-[#c5922e] hover:underline">Dashboard Toko</Link></li>}
-            {user?.role === "pemandu" && <li><Link href="/vendor/pemandu" className="text-[#c5922e] hover:underline">Dashboard Pemandu</Link></li>}
+            {user?.role === "vendor" && <li><Link href="/vendor/pemilik" className="text-[#c5922e] hover:underline">Dashboard Toko</Link></li>}
+            {user?.role === "vendor" && <li><Link href="/vendor/pemandu" className="text-[#c5922e] hover:underline">Dashboard Pemandu</Link></li>}
             {isAdmin && <li><Link href="/admin/dashboard" className="text-rose-700 hover:underline">Dashboard Admin</Link></li>}
           </ul>
 
@@ -66,8 +66,8 @@ export function Navbar() {
                   <Link href="/guides" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200">Pemandu Wisata</Link>
                 </>
               )}
-              {user?.role === "pemilik" && <Link href="/vendor/pemilik" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Toko</Link>}
-              {user?.role === "pemandu" && <Link href="/vendor/pemandu" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Pemandu</Link>}
+              {user?.role === "vendor" && <Link href="/vendor/pemilik" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Toko</Link>}
+              {user?.role === "vendor" && <Link href="/vendor/pemandu" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-[#c5922e]">Dashboard Pemandu</Link>}
               {isAdmin && <Link href="/admin/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="block py-3 border-b border-stone-200 text-rose-700">Dashboard Admin</Link>}
               
               {user ? (

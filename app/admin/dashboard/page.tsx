@@ -28,7 +28,7 @@ export default function AdminDashboardPage() {
     );
   }
 
-  const pendingMitra = registeredUsers.filter((u) => u.status === "pending_approval");
+  const pendingMitra = registeredUsers.filter((u: any) => u.status === "pending_approval");
 
   return (
     <main className="min-h-screen bg-[#f4f2eb] pt-32 pb-32 px-4 sm:px-10 text-stone-900 font-sans">
@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-stone-500 font-mono py-2">Tidak ada mitra baru yang menunggu verifikasi.</p>
           ) : (
             <div className="space-y-3">
-              {pendingMitra.map((m) => (
+              {pendingMitra.map((m: any) => (
                 <div key={m.id} className="p-4 bg-[#f4f2eb] border border-stone-300 rounded-none flex justify-between items-center text-xs">
                   <div>
                     <p className="font-bold text-sm text-stone-900">{m.name} ({m.role.toUpperCase()})</p>
